@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import {
   Dialog,
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -164,6 +164,35 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [users, setUsers] = useState([]);
+  const [query, setQuery] = useState("");
+  const [sortBy, setSortBy] = useState("name-asc");
+
+  const filteredUsers = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    const filtered = normalizedQuery
+      ? users.filter((u) => {
+          const fullName = `${u.first_name} ${u.last_name}`.toLowerCase();
+          return (
+            fullName.includes(normalizedQuery) ||
+            u.email?.toLowerCase().includes(normalizedQuery) ||
+            u.phone?.toLowerCase().includes(normalizedQuery)
+          );
+        })
+      : users;
+
+    return [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case "name-desc":
+          return `${b.first_name} ${b.last_name}`.localeCompare(`${a.first_name} ${a.last_name}`);
+        case "email":
+          return (a.email || "").localeCompare(b.email || "");
+        case "role":
+          return (a.role || "").localeCompare(b.role || "");
+        default:
+          return `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`);
+      }
+    });
+  }, [users, query, sortBy]);
 
   async function loadUsers() {
     setLoading(true);
@@ -203,15 +232,34 @@ export default function UsersPage() {
       title="Users"
       description="Admin-only account management."
       actions={
-        <UserDialog
-          onSave={saveUser}
-          trigger={
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              New user
-            </Button>
-          }
-        />
+        <>
+          <Input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search users"
+            className="w-40"
+          />
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name-asc">Name A-Z</SelectItem>
+              <SelectItem value="name-desc">Name Z-A</SelectItem>
+              <SelectItem value="email">Email A-Z</SelectItem>
+              <SelectItem value="role">Role</SelectItem>
+            </SelectContent>
+          </Select>
+          <UserDialog
+            onSave={saveUser}
+            trigger={
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                New user
+              </Button>
+            }
+          />
+        </>
       }
     >
       {error ? (
@@ -223,47 +271,77 @@ export default function UsersPage() {
       {loading ? (
         <LoadingCard message="Loading users..." />
       ) : (
-        <div className="space-y-3">
-          {users.map((user) => (
-            <Card key={user.id} className="border-border/60 bg-card/80">
-              <CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <CardTitle className="text-base">
-                    {user.first_name} {user.last_name}
-                  </CardTitle>
-                  <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
-                  <p className="text-xs text-muted-foreground">{user.phone}</p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Badge variant={user.role === "admin" ? "default" : "secondary"} className="rounded-lg">
-                    {user.role}
-                  </Badge>
-
-                  <UserDialog
-                    initialValue={user}
-                    onSave={saveUser}
-                    trigger={
-                      <Button variant="outline" size="icon-sm">
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    }
-                  />
-
-                  <Button variant="destructive" size="icon-sm" onClick={() => removeUser(user.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-
-          {users.length === 0 ? (
-            <Card className="border-border/60 bg-card/80">
-              <CardContent className="p-6 text-sm text-muted-foreground">No users found.</CardContent>
-            </Card>
-          ) : null}
-        </div>
+        <Card className="border-border/60 bg-card/80">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/60 bg-muted/40">
+                    <th className="px-4 py-3 text-left font-semibold text-muted-foreground">#</th>
+                    <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Nume</th>
+                    <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Email</th>
+                    <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Telefon</th>
+                    <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Rol</th>
+                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Acțiuni</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                        No users found.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredUsers.map((user, idx) => (
+                      <tr
+                        key={user.id}
+                        className="border-b border-border/40 transition-colors last:border-0 hover:bg-muted/30"
+                      >
+                        <td className="px-4 py-3 tabular-nums text-foreground/50">{idx + 1}</td>
+                        <td className="px-4 py-3 font-semibold text-foreground">
+                          {user.first_name} {user.last_name}
+                        </td>
+                        <td className="px-4 py-3 text-foreground">{user.email}</td>
+                        <td className="px-4 py-3 text-foreground">{user.phone || "—"}</td>
+                        <td className="px-4 py-3">
+                          <Badge
+                            variant={user.role === "admin" ? "default" : "secondary"}
+                            className="rounded-full"
+                          >
+                            {user.role}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-2">
+                            <UserDialog
+                              initialValue={user}
+                              onSave={saveUser}
+                              trigger={
+                                <Button size="sm" className="gap-1.5 rounded-full bg-amber-500 text-white shadow-sm hover:bg-amber-500/90">
+                                  <Pencil className="h-3.5 w-3.5" />
+                                  Edit
+                                </Button>
+                              }
+                            />
+                            <Button
+                              size="sm"
+                              className="gap-1.5 rounded-full bg-red-500 text-white shadow-sm hover:bg-red-500/90"
+                              onClick={() => removeUser(user.id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Delete
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </PageFrame>
   );

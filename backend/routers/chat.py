@@ -193,15 +193,15 @@ def _build_database_context(db: Session, current_user: dict[str, Any]) -> dict[s
 def _default_clarification(action: str, missing: list[str], is_admin: bool) -> str:
     if action == "create_reservation":
         if is_admin:
-            return "To create a reservation, tell me: user (email/name), movie, hall, screening date+time, and seat (example A5)."
-        return "To create your reservation, tell me: movie, hall, screening date+time, and seat (example A5)."
+            return "Pentru a crea o rezervare, spune-mi: utilizatorul (email/nume), filmul, sala, data și ora proiecției și locul (exemplu A5)."
+        return "Pentru a face o rezervare, spune-mi: filmul, sala, data și ora proiecției și locul dorit (exemplu A5)."
     if action == "update_reservation":
         if is_admin:
-            return "To update a reservation, tell me reservation id and what to change (user/movie/hall/screening/seat)."
-        return "To update your reservation, tell me reservation id and what to change (movie/hall/screening/seat)."
+            return "Pentru a actualiza o rezervare, spune-mi id-ul rezervării și ce dorești să modifici (utilizator/film/sală/proiecție/loc)."
+        return "Pentru a modifica rezervarea, spune-mi id-ul rezervării și ce dorești să schimbi (film/sală/proiecție/loc)."
     if missing:
-        return "I need more details before writing to DB: " + ", ".join(missing)
-    return "Please provide more details for the database change."
+        return "Am nevoie de mai multe detalii înainte de a scrie în baza de date: " + ", ".join(missing)
+    return "Te rog să oferi mai multe detalii pentru această modificare."
 
 
 def _looks_like_write_request(message: str) -> bool:
@@ -577,7 +577,7 @@ def ask_chatbot(payload: ChatRequest, db: Session = Depends(get_db), current_use
         if plan["intent"] in {"mutation", "needs_clarification"} or plan["action"] != "none":
             if not can_manage_all_records and plan["action"] not in user_allowed_mutations:
                 return ChatResponse(
-                    answer="I can read data for you. For writes, non-admin users can only create/update their own reservations.",
+                    answer="Pot să îți citesc date. Pentru modificări, utilizatorii obișnuiți pot doar să creeze sau să actualizeze propriile rezervări.",
                     model=OLLAMA_MODEL,
                     used_database=True,
                 )
@@ -592,12 +592,12 @@ def ask_chatbot(payload: ChatRequest, db: Session = Depends(get_db), current_use
                 summary = _execute_action(plan["action"], plan["data"], db, current_user=current_user)
             except HTTPException as exc:
                 return ChatResponse(
-                    answer=f"I need more details before executing: {exc.detail}",
+                    answer=f"Am nevoie de mai multe detalii înainte de execuție: {exc.detail}",
                     model=OLLAMA_MODEL,
                     used_database=True,
                 )
             return ChatResponse(
-                answer=summary + "\nTell me the next change if needed.",
+                answer=summary + "\nSpune-mi dacă mai dorești alte modificări.",
                 model=OLLAMA_MODEL,
                 used_database=True,
             )
@@ -610,8 +610,10 @@ def ask_chatbot(payload: ChatRequest, db: Session = Depends(get_db), current_use
         {
             "role": "system",
             "content": (
-                "You are a cinema assistant. Use DB context as source of truth. "
-                "If data is missing, say so clearly."
+                "Ești un asistent pentru o aplicație de cinema. "
+                "Folosește contextul bazei de date ca sursă de adevăr. "
+                "Dacă informațiile lipsesc, spune clar. "
+                "Răspunde întotdeauna în limba română."
             ),
         }
     ]

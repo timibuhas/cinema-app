@@ -49,11 +49,11 @@ export function RoleRoute({ allowedRoles }) {
 }
 
 export function RootRedirect() {
-  const { user, loading } = useAuth();
+  const { loading } = useAuth();
 
   if (loading) {
     return <FullPageMessage>Preparing app...</FullPageMessage>;
   }
 
-  return <Navigate to={user ? "/dashboard" : "/login"} replace />;
+  return <Navigate to="/dashboard" replace />;
 }

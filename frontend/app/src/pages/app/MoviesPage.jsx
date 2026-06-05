@@ -1,6 +1,6 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ImagePlus, Pencil, Plus, Trash2, UploadCloud } from "lucide-react";
+import { Check, Film, ImagePlus, Pencil, Plus, Star, Trash2, UploadCloud } from "lucide-react";
 
 import {
   Dialog,
@@ -15,17 +15,45 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { moviesApi, resolveImageUrl } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import PageFrame from "@/pages/app/PageFrame";
 import LoadingCard from "@/pages/app/LoadingCard";
 
+function StarDisplay({ rating }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((s) => (
+        <Star
+          key={s}
+          className={`h-3.5 w-3.5 ${
+            s <= Math.round(rating)
+              ? "fill-amber-400 text-amber-400"
+              : "text-muted-foreground/25"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
 const emptyMovie = {
   title: "",
   description: "",
   duration: "",
   image_url: "",
+  genre: "",
+  director: "",
+  actors: "",
+  rating: "",
 };
 
 function MovieDialog({ trigger, initialValue, onSave }) {
@@ -33,30 +61,29 @@ function MovieDialog({ trigger, initialValue, onSave }) {
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
-  const [file, setFile] = useState(null);
   const [form, setForm] = useState(initialValue || emptyMovie);
 
   useEffect(() => {
     if (open) {
       setForm(initialValue || emptyMovie);
-      setFile(null);
       setError("");
     }
   }, [initialValue, open]);
 
-  async function handleUpload() {
-    if (!file) {
-      return;
-    }
+  function field(key) {
+    return (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
+  }
 
+  async function handleFileChange(e) {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
     setUploading(true);
     setError("");
-
     try {
-      const result = await moviesApi.uploadImage(file);
-      setForm((previous) => ({ ...previous, image_url: result.image_url }));
-    } catch (uploadError) {
-      setError(uploadError.message || "Image upload failed");
+      const result = await moviesApi.uploadImage(selected);
+      setForm((p) => ({ ...p, image_url: result.image_url }));
+    } catch (err) {
+      setError(err.message || "Image upload failed");
     } finally {
       setUploading(false);
     }
@@ -65,7 +92,6 @@ function MovieDialog({ trigger, initialValue, onSave }) {
   async function handleSave() {
     setSubmitting(true);
     setError("");
-
     try {
       await onSave({
         ...(initialValue?.id ? { id: initialValue.id } : {}),
@@ -73,8 +99,11 @@ function MovieDialog({ trigger, initialValue, onSave }) {
         description: form.description,
         duration: Number(form.duration),
         image_url: form.image_url || null,
+        genre: form.genre || null,
+        director: form.director || null,
+        actors: form.actors || null,
+        rating: form.rating || null,
       });
-
       setOpen(false);
     } catch (saveError) {
       setError(saveError.message || "Could not save movie");
@@ -86,101 +115,158 @@ function MovieDialog({ trigger, initialValue, onSave }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>{initialValue ? "Edit movie" : "Add movie"}</DialogTitle>
+      <DialogContent className="flex max-h-[92vh] flex-col overflow-hidden sm:max-w-4xl">
+        <DialogHeader className="shrink-0 border-b border-border/50 pb-4">
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <Film className="h-5 w-5 text-primary" />
+            {initialValue ? `Edit — ${initialValue.title}` : "Add new movie"}
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-4 py-2">
-          <div className="space-y-2">
-            <Label htmlFor="movie-title">Title</Label>
-            <Input
-              id="movie-title"
-              value={form.title}
-              onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
-            />
-          </div>
+        <div className="flex-1 overflow-y-auto py-4">
+          <div className="grid gap-6 md:grid-cols-[176px_1fr]">
 
-          <div className="space-y-2">
-            <Label htmlFor="movie-description">Description</Label>
-            <Textarea
-              id="movie-description"
-              value={form.description}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, description: event.target.value }))
-              }
-            />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="movie-duration">Duration (minutes)</Label>
-              <Input
-                id="movie-duration"
-                type="number"
-                min={1}
-                value={form.duration}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, duration: event.target.value }))
-                }
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="movie-image">Poster URL (optional)</Label>
-              <Input
-                id="movie-image"
-                value={form.image_url || ""}
-                onChange={(event) => setForm((prev) => ({ ...prev, image_url: event.target.value }))}
-                placeholder="https://..."
-              />
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-border/70 bg-muted/30 p-3">
-            <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
-              <div className="space-y-2">
-                <Label htmlFor="movie-file">Upload image from your computer</Label>
-                <Input
-                  id="movie-file"
+            {/* ── Left: poster ─────────────────────────────── */}
+            <div className="space-y-3">
+              <label className="group relative block cursor-pointer">
+                <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-muted">
+                  {form.image_url ? (
+                    <img
+                      src={resolveImageUrl(form.image_url)}
+                      alt="Poster preview"
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground/40">
+                      <Film className="h-10 w-10" />
+                      <span className="text-xs">No poster</span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-black/55 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                    {uploading ? (
+                      <span className="text-xs font-semibold text-white">Uploading…</span>
+                    ) : (
+                      <>
+                        <UploadCloud className="h-7 w-7 text-white" />
+                        <span className="text-xs font-semibold text-white">
+                          {form.image_url ? "Change poster" : "Upload poster"}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <input
                   type="file"
                   accept="image/*"
-                  onChange={(event) => setFile(event.target.files?.[0] || null)}
+                  className="sr-only"
+                  onChange={handleFileChange}
+                  disabled={uploading}
                 />
-              </div>
+              </label>
 
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleUpload}
-                disabled={!file || uploading}
-              >
-                <UploadCloud className="mr-2 h-4 w-4" />
-                {uploading ? "Uploading..." : "Upload image"}
-              </Button>
+              <Input
+                value={form.image_url || ""}
+                onChange={field("image_url")}
+                placeholder="Or paste URL…"
+                className="h-8 text-xs"
+              />
             </div>
 
-            {form.image_url ? (
-              <div className="mt-3 overflow-hidden rounded-lg border border-border/70 bg-card">
-                <img
-                  src={resolveImageUrl(form.image_url)}
-                  alt="Movie preview"
-                  className="h-44 w-full object-cover"
+            {/* ── Right: fields ─────────────────────────────── */}
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="mv-title">Title</Label>
+                <Input
+                  id="mv-title"
+                  value={form.title}
+                  onChange={field("title")}
+                  className="font-semibold"
+                  placeholder="Movie title"
                 />
               </div>
-            ) : null}
-          </div>
 
-          {error ? (
-            <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {error}
-            </p>
-          ) : null}
+              <div className="space-y-1.5">
+                <Label htmlFor="mv-desc">Description</Label>
+                <Textarea
+                  id="mv-desc"
+                  value={form.description}
+                  onChange={field("description")}
+                  rows={3}
+                  placeholder="Short synopsis…"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="mv-dur">Duration (min)</Label>
+                  <Input
+                    id="mv-dur"
+                    type="number"
+                    min={1}
+                    value={form.duration}
+                    onChange={field("duration")}
+                    placeholder="120"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="mv-rating">Rating</Label>
+                  <Input
+                    id="mv-rating"
+                    value={form.rating || ""}
+                    onChange={field("rating")}
+                    placeholder="PG-13, 8.5/10…"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="mv-genre">Genre</Label>
+                  <Input
+                    id="mv-genre"
+                    value={form.genre || ""}
+                    onChange={field("genre")}
+                    placeholder="Action, Drama…"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="mv-dir">Director</Label>
+                  <Input
+                    id="mv-dir"
+                    value={form.director || ""}
+                    onChange={field("director")}
+                    placeholder="Director name"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="mv-actors">Cast</Label>
+                <Textarea
+                  id="mv-actors"
+                  value={form.actors || ""}
+                  onChange={field("actors")}
+                  rows={2}
+                  placeholder="Actor 1, Actor 2…"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
-        <DialogFooter>
-          <Button type="button" onClick={handleSave} disabled={submitting}>
-            {submitting ? "Saving..." : "Save movie"}
+        {error && (
+          <p className="shrink-0 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </p>
+        )}
+
+        <DialogFooter className="shrink-0 border-t border-border/50 pt-4">
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={submitting} className="gap-2">
+            <Check className="h-4 w-4" />
+            {submitting ? "Saving…" : "Save movie"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -194,6 +280,7 @@ export default function MoviesPage() {
   const [error, setError] = useState("");
   const [movies, setMovies] = useState([]);
   const [query, setQuery] = useState("");
+  const [sortBy, setSortBy] = useState("title-asc");
 
   async function loadMovies() {
     setLoading(true);
@@ -229,33 +316,57 @@ export default function MoviesPage() {
 
   const filteredMovies = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) {
-      return movies;
-    }
 
-    return movies.filter((movie) => {
-      const title = movie.title?.toLowerCase() || "";
-      const description = movie.description?.toLowerCase() || "";
-      return title.includes(normalizedQuery) || description.includes(normalizedQuery);
+    const filtered = normalizedQuery
+      ? movies.filter((movie) => {
+          const title = movie.title?.toLowerCase() || "";
+          const description = movie.description?.toLowerCase() || "";
+          const genre = movie.genre?.toLowerCase() || "";
+          const director = movie.director?.toLowerCase() || "";
+          const actors = movie.actors?.toLowerCase() || "";
+          return (
+            title.includes(normalizedQuery) ||
+            description.includes(normalizedQuery) ||
+            genre.includes(normalizedQuery) ||
+            director.includes(normalizedQuery) ||
+            actors.includes(normalizedQuery)
+          );
+        })
+      : movies;
+
+    return [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case "title-desc": return b.title.localeCompare(a.title);
+        case "duration-asc": return (a.duration || 0) - (b.duration || 0);
+        case "duration-desc": return (b.duration || 0) - (a.duration || 0);
+        default: return a.title.localeCompare(b.title);
+      }
     });
-  }, [movies, query]);
+  }, [movies, query, sortBy]);
 
   return (
     <PageFrame
       title="Movies"
-      description={
-        isAdmin
-          ? "Create, update and organize your movie catalog."
-          : "Choose a movie and continue to reservation."
-      }
+
       actions={
         <>
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search movies"
-            className="w-56"
+            className="w-48"
           />
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="title-asc">Title A-Z</SelectItem>
+              <SelectItem value="title-desc">Title Z-A</SelectItem>
+              <SelectItem value="duration-asc">Duration (shortest)</SelectItem>
+              <SelectItem value="duration-desc">Duration (longest)</SelectItem>
+            </SelectContent>
+          </Select>
           {isAdmin ? (
             <MovieDialog
               onSave={saveMovie}
@@ -279,33 +390,63 @@ export default function MoviesPage() {
       {loading ? (
         <LoadingCard message="Loading movies..." />
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {filteredMovies.map((movie) => (
-            <Card key={movie.id} className="overflow-hidden border-border/70 bg-card/92 shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl">
-              <div className="aspect-[4/5] w-full bg-muted">
-                {movie.image_url ? (
-                  <img
-                    src={resolveImageUrl(movie.image_url)}
-                    alt={movie.title}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-                    <ImagePlus className="h-5 w-5" />
-                    No poster provided
-                  </div>
-                )}
-              </div>
-
-              <CardHeader className="space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <CardTitle className="line-clamp-1 text-lg">{movie.title}</CardTitle>
-                  <Badge variant="secondary" className="rounded-full">{movie.duration}m</Badge>
+            <Card key={movie.id} className="overflow-hidden border-border/70 bg-card/92 pt-0 shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl">
+              <Link to={`/movies/${movie.id}`} className="block">
+                <div className="relative aspect-[2/3] w-full overflow-hidden bg-muted">
+                  {movie.image_url ? (
+                    <img
+                      src={resolveImageUrl(movie.image_url)}
+                      alt={movie.title}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+                      <ImagePlus className="h-5 w-5" />
+                      No poster provided
+                    </div>
+                  )}
                 </div>
+              </Link>
+
+              <CardHeader className="space-y-1 pb-2">
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="line-clamp-1 text-lg">
+                    <Link to={`/movies/${movie.id}`} className="hover:underline">
+                      {movie.title}
+                    </Link>
+                  </CardTitle>
+                  <div className="flex shrink-0 flex-wrap items-center gap-1">
+                    {movie.rating ? (
+                      <Badge variant="outline" className="rounded-full">{movie.rating}</Badge>
+                    ) : null}
+                    <Badge variant="secondary" className="rounded-full">{movie.duration}m</Badge>
+                  </div>
+                </div>
+                {movie.avg_rating != null ? (
+                  <div className="flex items-center gap-1.5">
+                    <StarDisplay rating={movie.avg_rating} />
+                    <span className="text-xs font-semibold text-amber-500">{movie.avg_rating}</span>
+                    <span className="text-xs text-muted-foreground">({movie.review_count})</span>
+                  </div>
+                ) : null}
+                {movie.genre ? (
+                  <p className="text-xs text-muted-foreground">{movie.genre}</p>
+                ) : null}
+                {movie.director ? (
+                  <p className="text-xs text-muted-foreground">Dir. {movie.director}</p>
+                ) : null}
               </CardHeader>
 
               <CardContent className="space-y-4">
                 <p className="line-clamp-3 text-sm text-muted-foreground">{movie.description}</p>
+
+                {movie.actors ? (
+                  <p className="line-clamp-2 text-xs text-muted-foreground">
+                    <span className="font-medium">Cast:</span> {movie.actors}
+                  </p>
+                ) : null}
 
                 <div className="flex flex-wrap gap-2">
                   <Button asChild variant="outline">
@@ -314,24 +455,26 @@ export default function MoviesPage() {
                   <Button asChild>
                     <Link to={`/reservations?movie=${movie.id}`}>Reserve</Link>
                   </Button>
-
-                  {isAdmin ? (
-                    <>
-                      <MovieDialog
-                        initialValue={movie}
-                        onSave={saveMovie}
-                        trigger={
-                          <Button variant="outline" size="icon-sm">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        }
-                      />
-                      <Button variant="destructive" size="icon-sm" onClick={() => deleteMovie(movie.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </>
-                  ) : null}
                 </div>
+
+                {isAdmin ? (
+                  <div className="flex gap-2">
+                    <MovieDialog
+                      initialValue={movie}
+                      onSave={saveMovie}
+                      trigger={
+                        <Button size="sm" className="gap-1.5 rounded-full bg-amber-500 text-white shadow-sm hover:bg-amber-500/90">
+                          <Pencil className="h-3.5 w-3.5" />
+                          Edit
+                        </Button>
+                      }
+                    />
+                    <Button size="sm" className="gap-1.5 rounded-full bg-red-500 text-white shadow-sm hover:bg-red-500/90" onClick={() => deleteMovie(movie.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Delete
+                    </Button>
+                  </div>
+                ) : null}
               </CardContent>
             </Card>
           ))}

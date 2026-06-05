@@ -2,11 +2,12 @@
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from auth.dependencies import get_admin_user
 from database import get_db
-from models import Movie
+from models import Movie, Review
 from schemas.movie import MovieCreate, MovieResponse
 
 router = APIRouter(prefix="/movies", tags=["Movies"])
@@ -26,6 +27,10 @@ def create_movie(
         description=movie.description,
         duration=movie.duration,
         image_url=movie.image_url,
+        genre=movie.genre,
+        director=movie.director,
+        actors=movie.actors,
+        rating=movie.rating,
     )
 
     db.add(new_movie)
@@ -59,15 +64,45 @@ async def upload_movie_image(
 
 @router.get("", response_model=list[MovieResponse])
 def get_movies(db: Session = Depends(get_db)):
-    return db.query(Movie).all()
+    results = (
+        db.query(
+            Movie,
+            func.avg(Review.rating).label("avg_rating"),
+            func.count(Review.id).label("review_count"),
+        )
+        .outerjoin(Review, Movie.id == Review.movie_id)
+        .group_by(Movie.id)
+        .all()
+    )
+    out = []
+    for movie, avg, count in results:
+        r = MovieResponse.model_validate(movie)
+        r.avg_rating = round(float(avg), 1) if avg else None
+        r.review_count = count or 0
+        out.append(r)
+    return out
 
 
 @router.get("/{movie_id}", response_model=MovieResponse)
 def get_movie(movie_id: UUID, db: Session = Depends(get_db)):
-    movie = db.query(Movie).filter(Movie.id == movie_id).first()
-    if not movie:
+    row = (
+        db.query(
+            Movie,
+            func.avg(Review.rating).label("avg_rating"),
+            func.count(Review.id).label("review_count"),
+        )
+        .outerjoin(Review, Movie.id == Review.movie_id)
+        .group_by(Movie.id)
+        .filter(Movie.id == movie_id)
+        .first()
+    )
+    if not row:
         raise HTTPException(status_code=404, detail="Movie not found")
-    return movie
+    movie, avg, count = row
+    r = MovieResponse.model_validate(movie)
+    r.avg_rating = round(float(avg), 1) if avg else None
+    r.review_count = count or 0
+    return r
 
 
 @router.put("/{movie_id}", response_model=MovieResponse)
@@ -85,6 +120,10 @@ def update_movie(
     movie.description = movie_data.description
     movie.duration = movie_data.duration
     movie.image_url = movie_data.image_url
+    movie.genre = movie_data.genre
+    movie.director = movie_data.director
+    movie.actors = movie_data.actors
+    movie.rating = movie_data.rating
 
     db.commit()
     db.refresh(movie)

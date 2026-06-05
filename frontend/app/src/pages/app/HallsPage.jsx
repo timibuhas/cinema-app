@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { Building2, Pencil, Plus, Trash2 } from "lucide-react";
+
 import {
   Dialog,
   DialogContent,
@@ -13,6 +14,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { hallsApi } from "@/lib/api";
 import PageFrame from "@/pages/app/PageFrame";
 import LoadingCard from "@/pages/app/LoadingCard";
@@ -377,6 +385,24 @@ export default function HallsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [halls, setHalls] = useState([]);
+  const [query, setQuery] = useState("");
+  const [sortBy, setSortBy] = useState("name-asc");
+
+  const filteredHalls = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    const filtered = normalizedQuery
+      ? halls.filter((hall) => hall.name?.toLowerCase().includes(normalizedQuery))
+      : halls;
+
+    return [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case "name-desc": return b.name.localeCompare(a.name);
+        case "capacity-desc": return (b.capacity || 0) - (a.capacity || 0);
+        case "capacity-asc": return (a.capacity || 0) - (b.capacity || 0);
+        default: return a.name.localeCompare(b.name);
+      }
+    });
+  }, [halls, query, sortBy]);
 
   async function loadHalls() {
     setLoading(true);
@@ -415,15 +441,34 @@ export default function HallsPage() {
       title="Halls"
       description="Create hall matrices and mark missing seats with X."
       actions={
-        <HallDialog
-          onSave={saveHall}
-          trigger={
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              New hall
-            </Button>
-          }
-        />
+        <>
+          <Input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search halls"
+            className="w-40"
+          />
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name-asc">Name A-Z</SelectItem>
+              <SelectItem value="name-desc">Name Z-A</SelectItem>
+              <SelectItem value="capacity-desc">Capacity (most)</SelectItem>
+              <SelectItem value="capacity-asc">Capacity (fewest)</SelectItem>
+            </SelectContent>
+          </Select>
+          <HallDialog
+            onSave={saveHall}
+            trigger={
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                New hall
+              </Button>
+            }
+          />
+        </>
       }
     >
       {error ? (
@@ -436,7 +481,7 @@ export default function HallsPage() {
         <LoadingCard message="Loading halls..." />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {halls.map((hall) => (
+          {filteredHalls.map((hall) => (
             <Card key={hall.id} className="border-border/60 bg-card/80">
               <CardHeader className="space-y-2">
                 <div className="flex items-center justify-between gap-3">
@@ -460,21 +505,23 @@ export default function HallsPage() {
                     initialValue={hall}
                     onSave={saveHall}
                     trigger={
-                      <Button variant="outline" size="icon-sm">
-                        <Pencil className="h-4 w-4" />
+                      <Button size="sm" className="gap-1.5 rounded-full bg-amber-500 text-white shadow-sm hover:bg-amber-500/90">
+                        <Pencil className="h-3.5 w-3.5" />
+                        Edit
                       </Button>
                     }
                   />
 
-                  <Button variant="destructive" size="icon-sm" onClick={() => removeHall(hall.id)}>
-                    <Trash2 className="h-4 w-4" />
+                  <Button size="sm" className="gap-1.5 rounded-full bg-red-500 text-white shadow-sm hover:bg-red-500/90" onClick={() => removeHall(hall.id)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete
                   </Button>
                 </div>
               </CardContent>
             </Card>
           ))}
 
-          {halls.length === 0 ? (
+          {filteredHalls.length === 0 ? (
             <Card className="border-border/60 bg-card/80 sm:col-span-2 xl:col-span-3">
               <CardContent className="p-6 text-sm text-muted-foreground">
                 No halls found.

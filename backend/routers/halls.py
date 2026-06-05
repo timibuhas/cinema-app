@@ -6,7 +6,7 @@ import traceback
 
 from auth.dependencies import get_admin_user
 from database import get_db
-from models import Hall, Seat
+from models import Hall, Reservation, Seat
 from schemas.hall import HallCreate, HallResponse
 
 router = APIRouter(prefix="/halls", tags=["Halls"])
@@ -159,20 +159,46 @@ def update_hall(
         hall.name = hall_data.name
         hall.capacity = len(hall_data.seats)
 
-        db.query(Seat).filter(Seat.hall_id == hall.id).delete(synchronize_session=False)
+        existing_seats = db.query(Seat).filter(Seat.hall_id == hall.id).all()
+        existing_map = {(s.row, s.number): s for s in existing_seats}
+        new_keys = {(s.row, s.number) for s in hall_data.seats}
 
-        new_seats = [
-            Seat(
-                hall_id=hall.id,
-                row=seat.row,
-                number=seat.number,
-                grid_row=resolve_grid_row(seat),
-                grid_col=resolve_grid_col(seat),
+        # Seats removed from layout — block if any have reservations
+        seats_to_remove = [s for s in existing_seats if (s.row, s.number) not in new_keys]
+        if seats_to_remove:
+            conflicting = (
+                db.query(Reservation)
+                .filter(Reservation.seat_id.in_([s.id for s in seats_to_remove]))
+                .count()
             )
-            for seat in hall_data.seats
-        ]
+            if conflicting:
+                raise HTTPException(
+                    status_code=409,
+                    detail=(
+                        f"{conflicting} seat(s) being removed still have reservations. "
+                        "Delete those reservations first."
+                    ),
+                )
+            for seat in seats_to_remove:
+                db.delete(seat)
 
-        db.add_all(new_seats)
+        # Update existing seats in-place; add new ones
+        for seat_data in hall_data.seats:
+            key = (seat_data.row, seat_data.number)
+            if key in existing_map:
+                existing_map[key].grid_row = resolve_grid_row(seat_data)
+                existing_map[key].grid_col = resolve_grid_col(seat_data)
+            else:
+                db.add(
+                    Seat(
+                        hall_id=hall.id,
+                        row=seat_data.row,
+                        number=seat_data.number,
+                        grid_row=resolve_grid_row(seat_data),
+                        grid_col=resolve_grid_col(seat_data),
+                    )
+                )
+
         db.commit()
 
         updated_hall = (

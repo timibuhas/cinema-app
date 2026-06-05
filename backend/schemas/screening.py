@@ -13,6 +13,7 @@ class MovieMini(BaseModel):
     id: UUID
     title: str
     image_url: str | None = None
+    genre: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

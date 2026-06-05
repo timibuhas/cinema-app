@@ -20,11 +20,13 @@ class AdminReservationBulkCreate(BaseModel):
     user_id: UUID
     screening_id: UUID
     seat_ids: list[UUID] = Field(min_length=1)
+    modified: bool = False
 
 
 class ClientReservationBulkCreate(BaseModel):
     screening_id: UUID
     seat_ids: list[UUID] = Field(min_length=1)
+    modified: bool = False
 
 
 class SeatMini(BaseModel):
@@ -41,8 +43,24 @@ class UserMini(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class MovieMiniRes(BaseModel):
+    title: str
+    image_url: Optional[str] = None
+    genre: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class HallMiniRes(BaseModel):
+    name: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ScreeningMini(BaseModel):
     start_time: datetime
+    movie: Optional[MovieMiniRes] = None
+    hall: Optional[HallMiniRes] = None
 
     model_config = ConfigDict(from_attributes=True)
 

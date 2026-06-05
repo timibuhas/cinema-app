@@ -1,4 +1,4 @@
-﻿import { BrowserRouter as Router, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Navigate, Route, Routes } from "react-router-dom";
 import AppShell from "@/components/layout/AppShell";
 import {
   ProtectedRoute,
@@ -15,6 +15,8 @@ import ReservationsPage from "@/pages/app/ReservationsPage";
 import HallsPage from "@/pages/app/HallsPage";
 import UsersPage from "@/pages/app/UsersPage";
 import ChatbotPage from "@/pages/app/ChatbotPage";
+import ContactPage from "@/pages/app/ContactPage";
+import MovieDetailPage from "@/pages/app/MovieDetailPage";
 
 export default function App() {
   return (
@@ -22,16 +24,20 @@ export default function App() {
       <Routes>
         <Route path="/" element={<RootRedirect />} />
 
-        <Route element={<PublicOnlyRoute />}>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-        </Route>
+        <Route element={<AppShell />}>
+          <Route element={<PublicOnlyRoute />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Route>
+          {/* Public pages — accessible without an account */}
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/movies" element={<MoviesPage />} />
+          <Route path="/movies/:id" element={<MovieDetailPage />} />
+          <Route path="/screenings" element={<ScreeningsPage />} />
+          <Route path="/contact" element={<ContactPage />} />
 
-        <Route element={<ProtectedRoute />}>
-          <Route element={<AppShell />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/movies" element={<MoviesPage />} />
-            <Route path="/screenings" element={<ScreeningsPage />} />
+          {/* Protected pages — require login */}
+          <Route element={<ProtectedRoute />}>
             <Route path="/reservations" element={<ReservationsPage />} />
             <Route path="/chat" element={<ChatbotPage />} />
 

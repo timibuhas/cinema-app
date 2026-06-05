@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from database import Base
@@ -24,6 +24,10 @@ class Movie(Base):
     description = Column(String)
     duration = Column(Integer)  # minute
     image_url = Column(String)
+    genre = Column(String)
+    director = Column(String)
+    actors = Column(String)
+    rating = Column(String)
 
 class Hall(Base):
     __tablename__ = "halls"
@@ -67,3 +71,18 @@ class Reservation(Base):
     user = relationship("User")
     screening = relationship("Screening")
     seat = relationship("Seat")
+
+class Review(Base):
+    __tablename__ = "reviews"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    movie_id = Column(UUID(as_uuid=True), ForeignKey("movies.id"), nullable=False)
+    rating = Column(Integer, nullable=False)
+    comment = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+    movie = relationship("Movie")
+
+    __table_args__ = (UniqueConstraint("user_id", "movie_id", name="uq_user_movie_review"),)

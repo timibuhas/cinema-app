@@ -1,4 +1,4 @@
-﻿const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+﻿const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000`;
 
 function getAbsoluteApiUrl(path) {
   return `${API_URL}${path}`;
@@ -85,10 +85,13 @@ export const authApi = {
   logout: () => request("/logout", { method: "POST" }),
   register: (payload) => request("/register", { method: "POST", body: payload }),
   me: () => request("/me"),
+  sendVerificationCode: (email) => request("/verify-email/send", { method: "POST", body: { email } }),
+  checkVerificationCode: (email, code) => request("/verify-email/check", { method: "POST", body: { email, code } }),
 };
 
 export const moviesApi = {
   list: () => request("/movies"),
+  get: (id) => request(`/movies/${id}`),
   create: (payload) => request("/movies", { method: "POST", body: payload }),
   update: (id, payload) => request(`/movies/${id}`, { method: "PUT", body: payload }),
   remove: (id) => request(`/movies/${id}`, { method: "DELETE" }),
@@ -142,6 +145,17 @@ export const chatApi = {
   ask: (payload) => request("/chat/ask", { method: "POST", body: payload }),
   mutate: (payload) => request("/chat/mutate", { method: "POST", body: payload }),
   health: () => request("/chat/health"),
+};
+
+export const contactApi = {
+  send: (payload) => request("/contact", { method: "POST", body: payload }),
+};
+
+export const reviewsApi = {
+  listForMovie: (movieId) => request(`/reviews/movie/${movieId}`),
+  canReview: (movieId) => request(`/reviews/can-review/${movieId}`),
+  create: (payload) => request("/reviews", { method: "POST", body: payload }),
+  remove: (id) => request(`/reviews/${id}`, { method: "DELETE" }),
 };
 
 export { API_URL };
