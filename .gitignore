@@ -40,7 +40,7 @@ backend/.venv/
 backend/venv/
 
 # Runtime uploads
-backend/uploads/
+# backend/uploads/
 
 # ------------------------------
 # Node / Frontend
