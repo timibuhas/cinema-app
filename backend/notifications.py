@@ -9,7 +9,7 @@ def _cfg():
     smtp_user = os.getenv("SMTP_USER", "")
     return {
         "smtp_host":      os.getenv("SMTP_HOST", "smtp.gmail.com"),
-        "smtp_port":      int(os.getenv("SMTP_PORT", "587")),
+        "smtp_port":      int(os.getenv("SMTP_PORT", "465")),
         "smtp_user":      smtp_user,
         "smtp_password":  os.getenv("SMTP_PASSWORD", ""),
         "email_from":     os.getenv("EMAIL_FROM", smtp_user),
@@ -102,11 +102,17 @@ def send_email(to_email: str, subject: str, html: str) -> bool:
         msg["From"] = f"{c['email_from_name']} <{c['email_from']}>"
         msg["To"] = to_email
         msg.attach(MIMEText(html, "html", "utf-8"))
-        with smtplib.SMTP(c["smtp_host"], c["smtp_port"]) as server:
-            server.ehlo()
-            server.starttls()
-            server.login(c["smtp_user"], c["smtp_password"])
-            server.sendmail(c["email_from"], to_email, msg.as_string())
+        port = c["smtp_port"]
+        if port == 465:
+            with smtplib.SMTP_SSL(c["smtp_host"], port) as server:
+                server.login(c["smtp_user"], c["smtp_password"])
+                server.sendmail(c["email_from"], to_email, msg.as_string())
+        else:
+            with smtplib.SMTP(c["smtp_host"], port) as server:
+                server.ehlo()
+                server.starttls()
+                server.login(c["smtp_user"], c["smtp_password"])
+                server.sendmail(c["email_from"], to_email, msg.as_string())
         print(f"EMAIL_OK: sent '{subject}' to {to_email}")
         return True
     except Exception as exc:
