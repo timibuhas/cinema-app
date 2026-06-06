@@ -80,7 +80,7 @@ def check_verification_code(payload: VerifyEmailCheckRequest):
 
 # ===== LOGIN =====
 @router.post("/login")
-def login(user: schemas.user.UserLogin, db: Session = Depends(get_db)):
+def login(user: schemas.user.UserLogin, response: Response, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
 
     if not db_user or not verify_password(user.password, db_user.password):
@@ -96,13 +96,23 @@ def login(user: schemas.user.UserLogin, db: Session = Depends(get_db)):
     }
     token = create_access_token(token_data)
 
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=60 * 60 * 24
+    )
+
     return {
-        "token": token,
-        "role": db_user.role,
+        "message": "Login successful",
+        "role": db_user.role
     }
 
 @router.post("/logout")
-def logout():
+def logout(response: Response):
+    response.delete_cookie(key="access_token")
     return {"message": "Logged out successfully"}
 
     

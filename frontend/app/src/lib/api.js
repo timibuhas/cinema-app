@@ -45,16 +45,15 @@ async function request(path, options = {}) {
     method = "GET",
     body,
     headers,
+    credentials = "include",
     isFormData = false,
   } = options;
 
-  const token = localStorage.getItem("token");
-
   const response = await fetch(getAbsoluteApiUrl(path), {
     method,
+    credentials,
     headers: {
       ...(isFormData || body === undefined ? {} : { "Content-Type": "application/json" }),
-      ...(token ? { "Authorization": `Bearer ${token}` } : {}),
       ...(headers || {}),
     },
     body:
