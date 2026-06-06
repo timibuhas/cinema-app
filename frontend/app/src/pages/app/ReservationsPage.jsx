@@ -112,7 +112,7 @@ function ReservationCard({ group, screening, ownerLabel, isAdmin, onDelete, onEd
         </div>
 
         {/* Seats row + actions */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-xs text-muted-foreground">Locuri:</span>
             {seatLabels.map((label) => (
@@ -133,7 +133,8 @@ function ReservationCard({ group, screening, ownerLabel, isAdmin, onDelete, onEd
               onClick={onEdit}
             >
               <LayoutGrid className="h-3.5 w-3.5" />
-              Modifică locul
+              <span className="hidden sm:inline">Modifică locul</span>
+              <span className="sm:hidden">Modifică</span>
             </Button>
             <Button
               size="sm"
@@ -295,10 +296,13 @@ export default function ReservationsPage() {
     if (screeningFilterId || !movieFilterId || !screenings.length) return;
     const current = screeningsById[form.screening_id];
     if (current?.movie_id === movieFilterId) return;
-    const first = screenings.find((s) => s.movie_id === movieFilterId);
+    const now = new Date();
+    const first = screenings.find(
+      (s) => s.movie_id === movieFilterId && (isAdmin || new Date(s.start_time) >= now)
+    );
     if (!first) return;
     setForm((prev) => ({ ...prev, screening_id: first.id, seat_ids: [] }));
-  }, [movieFilterId, screeningFilterId, screenings, screeningsById, form.screening_id]);
+  }, [movieFilterId, screeningFilterId, screenings, screeningsById, form.screening_id, isAdmin]);
 
   useEffect(() => {
     let mounted = true;
@@ -796,7 +800,7 @@ export default function ReservationsPage() {
                               onClick={() => openEditDialog(group)}
                             >
                               <LayoutGrid className="h-3.5 w-3.5" />
-                              Modifică
+                              <span className="hidden lg:inline">Modifică</span>
                             </Button>
                             <Button
                               size="sm"

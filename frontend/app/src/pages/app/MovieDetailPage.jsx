@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  ArrowLeft, CalendarDays, Clock, Film, Loader2, Star, Trash2, User,
+  ArrowLeft, CalendarDays, Clock, Film, Loader2, Play, Star, Trash2, User,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { moviesApi, resolveImageUrl, reviewsApi } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+
+function getYouTubeEmbedUrl(url) {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    let videoId = null;
+    if (u.hostname.includes("youtube.com")) {
+      videoId = u.searchParams.get("v");
+    } else if (u.hostname === "youtu.be") {
+      videoId = u.pathname.slice(1);
+    }
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+  } catch {
+    return null;
+  }
+}
 
 // ─── Star display ─────────────────────────────────────────────────────────────
 function StarDisplay({ rating, size = "sm" }) {
@@ -157,9 +173,9 @@ export default function MovieDetailPage() {
           </div>
         )}
 
-        <div className="flex flex-col gap-6 p-6 md:flex-row md:p-8">
+        <div className="flex flex-col gap-6 p-4 sm:p-6 md:flex-row md:p-8">
           {/* Poster */}
-          <div className="relative mx-auto w-44 shrink-0 overflow-hidden rounded-2xl shadow-2xl md:mx-0 md:w-48">
+          <div className="relative mx-auto w-36 shrink-0 overflow-hidden rounded-2xl shadow-2xl sm:w-44 md:mx-0 md:w-48">
             {movie.image_url ? (
               <img
                 src={resolveImageUrl(movie.image_url)}
@@ -185,7 +201,7 @@ export default function MovieDetailPage() {
               )}
             </div>
 
-            <h1 className="text-3xl font-extrabold leading-tight md:text-4xl">{movie.title}</h1>
+            <h1 className="text-2xl font-extrabold leading-tight sm:text-3xl md:text-4xl">{movie.title}</h1>
 
             {/* Star rating */}
             {movie.avg_rating ? (
@@ -237,12 +253,33 @@ export default function MovieDetailPage() {
                 </Link>
               </Button>
               <Button asChild variant="outline">
-                <Link to={`/reservations?movie=${movie.id}`}>Rezervă bilet</Link>
+                <Link to={`/screenings?movie=${movie.id}`}>Rezervă bilet</Link>
               </Button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Trailer */}
+      {getYouTubeEmbedUrl(movie.trailer_url) && (
+        <div className="space-y-3">
+          <h2 className="flex items-center gap-2 text-xl font-bold">
+            <Play className="h-5 w-5 text-primary" />
+            Trailer
+          </h2>
+          <div className="overflow-hidden rounded-2xl border border-border/50 shadow-lg">
+            <div className="relative aspect-video w-full">
+              <iframe
+                src={getYouTubeEmbedUrl(movie.trailer_url)}
+                title={`Trailer — ${movie.title}`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="absolute inset-0 h-full w-full"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Reviews section */}
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
