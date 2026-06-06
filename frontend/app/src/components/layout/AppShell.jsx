@@ -32,7 +32,7 @@ const navigationItems = [
 
 function NavItems({ items, onNavigate, compact = false }) {
   return (
-    <nav className={compact ? "flex flex-wrap gap-2" : "flex items-center gap-0.5"}>
+    <nav className={compact ? "flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" : "flex items-center gap-0.5"}>
       {items.map((item) => (
         <NavLink
           key={item.to}
@@ -41,7 +41,7 @@ function NavItems({ items, onNavigate, compact = false }) {
           className={({ isActive }) =>
             compact
               ? [
-                  "inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold",
+                  "inline-flex shrink-0 items-center rounded-full border px-3 py-1.5 text-xs font-semibold",
                   isActive
                     ? "border-primary/30 bg-primary text-primary-foreground shadow-md"
                     : "border-border/70 bg-card/70 text-muted-foreground hover:bg-primary/10 hover:text-foreground",
@@ -216,11 +216,14 @@ export default function AppShell() {
                   <UserChip user={user} isAdmin={isAdmin} onLogout={logout} />
                 ) : (
                   <>
-                    <Button asChild variant="outline" size="sm">
+                    <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
                       <Link to="/login">Log in</Link>
                     </Button>
-                    <Button asChild size="sm">
+                    <Button asChild size="sm" className="hidden sm:inline-flex">
                       <Link to="/register">Register</Link>
+                    </Button>
+                    <Button asChild variant="outline" size="sm" className="sm:hidden">
+                      <Link to="/login">Intră</Link>
                     </Button>
                   </>
                 )}
@@ -235,7 +238,7 @@ export default function AppShell() {
             ) : null}
           </header>
 
-          <main className="flex-1 p-4 md:p-8">
+          <main className="flex-1 overflow-x-hidden p-4 md:p-8">
             <div className="mx-auto w-full max-w-7xl">
               <Outlet />
             </div>
@@ -243,7 +246,7 @@ export default function AppShell() {
 
           <footer className="border-t border-border/70 bg-card/50 backdrop-blur">
             <div className="mx-auto max-w-7xl px-4 py-8 md:px-8">
-              <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3">
                 {/* Brand */}
                 <div>
                   <Link to="/dashboard" className="inline-flex items-center gap-2 transition-opacity hover:opacity-80">

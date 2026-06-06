@@ -71,15 +71,15 @@ function HeroBanner({ movies, screeningsByMovie }) {
   const nextScreening = (screeningsByMovie.get(featured.id) || [])[0];
 
   return (
-    <div className="relative -mx-4 mb-12 overflow-hidden rounded-2xl md:-mx-8" style={{ minHeight: 500 }}>
+    <div className="relative -mx-4 mb-8 overflow-hidden rounded-none sm:mb-12 md:-mx-8 md:rounded-2xl">
       {/* Blurred backdrop */}
       <div className="absolute inset-0">
-        {featured.image_url ? (
+        {(featured.banner_image_url || featured.image_url) ? (
           <img
             key={featured.id}
-            src={resolveImageUrl(featured.image_url)}
+            src={resolveImageUrl(featured.banner_image_url || featured.image_url)}
             alt={featured.title}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover object-center"
           />
         ) : (
           <div className="h-full w-full bg-gradient-to-br from-primary/40 to-accent/20" />
@@ -89,7 +89,7 @@ function HeroBanner({ movies, screeningsByMovie }) {
       </div>
 
       {/* Content */}
-      <div className="relative flex min-h-[500px] items-end px-6 pb-12 md:px-14">
+      <div className="relative flex min-h-[360px] items-end px-5 pb-10 sm:min-h-[480px] sm:px-8 sm:pb-14 md:min-h-[620px] md:px-14">
         <div className="max-w-xl">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {genres.map((g) => (
@@ -114,7 +114,7 @@ function HeroBanner({ movies, screeningsByMovie }) {
             )}
           </div>
 
-          <h1 className="mb-3 text-4xl font-extrabold leading-tight text-white drop-shadow-lg md:text-5xl">
+          <h1 className="mb-3 text-2xl font-extrabold leading-tight text-white drop-shadow-lg sm:text-4xl md:text-5xl">
             {featured.title}
           </h1>
 
@@ -290,7 +290,7 @@ function UpcomingScreenings({ screenings, user }) {
             {items.slice(0, 5).map((s) => (
               <div
                 key={s.id}
-                className="flex items-center gap-3 rounded-xl border border-border/50 bg-card/60 px-4 py-3 transition hover:bg-card"
+                className="flex items-center gap-3 rounded-xl border border-border/50 bg-card/60 px-3 py-3 transition hover:bg-card sm:px-4"
               >
                 <div className="relative h-14 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
                   {s.movie?.image_url ? (
@@ -313,14 +313,14 @@ function UpcomingScreenings({ screenings, user }) {
                       {formatTime(s.start_time)}
                     </span>
                     {s.hall?.name && (
-                      <span className="flex items-center gap-1">
+                      <span className="hidden items-center gap-1 sm:flex">
                         <MapPin className="h-3 w-3" />
                         {s.hall.name}
                       </span>
                     )}
                   </div>
                 </div>
-                <Button asChild size="sm" variant="outline" className="shrink-0">
+                <Button asChild size="sm" variant="outline" className="shrink-0 text-xs">
                   <Link to={user ? `/reservations?screening=${s.id}` : "/login"}>
                     Rezervă
                   </Link>
@@ -492,7 +492,9 @@ export default function DashboardPage() {
 
   // ── Admin dashboard ──────────────────────────────────────────────────────
   if (isAdmin) {
-    const adminScreenings = [...data.screenings]
+    const now = new Date();
+    const adminScreenings = data.screenings
+      .filter((s) => new Date(s.start_time) >= now)
       .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
       .slice(0, 8);
 
@@ -501,7 +503,7 @@ export default function DashboardPage() {
         title="Admin Dashboard"
         description={`Bun venit, ${user?.first_name} ${user?.last_name}.`}
       >
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard icon={Film} label="Movies" value={data.movies.length} hint="Catalog entries" />
           <StatCard icon={CalendarDays} label="Screenings" value={data.screenings.length} hint="Scheduled slots" />
           <StatCard icon={Ticket} label="Reservations" value={data.reservations.length} hint="All users" />
@@ -553,7 +555,7 @@ export default function DashboardPage() {
 
   // ── User / Visitor dashboard ──────────────────────────────────────────────
   return (
-    <div className="space-y-12">
+    <div className="space-y-8 sm:space-y-12">
       {/* Hero */}
       {moviesEnriched.length > 0 && (
         <HeroBanner movies={moviesEnriched} screeningsByMovie={screeningsByMovie} />
@@ -561,9 +563,9 @@ export default function DashboardPage() {
 
       {/* Now Showing */}
       <section>
-        <div className="mb-5 flex items-end justify-between">
+        <div className="mb-4 flex items-end justify-between sm:mb-5">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">Acum în cinematograf</h2> 
+            <h2 className="text-xl font-bold tracking-tight sm:text-2xl">Acum în cinematograf</h2>
           </div>
           <Button asChild variant="ghost" size="sm" className="shrink-0">
             <Link to="/movies">Vezi toate →</Link>
@@ -574,9 +576,9 @@ export default function DashboardPage() {
 
       {/* Upcoming Screenings */}
       <section>
-        <div className="mb-5 flex items-end justify-between">
+        <div className="mb-4 flex items-end justify-between sm:mb-5">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">Proiecții în curând</h2>
+            <h2 className="text-xl font-bold tracking-tight sm:text-2xl">Proiecții în curând</h2>
           </div>
           <Button asChild variant="ghost" size="sm" className="shrink-0">
             <Link to="/screenings">Toate proiecțiile →</Link>
@@ -588,9 +590,9 @@ export default function DashboardPage() {
       {/* My Reservations — logged-in users only */}
       {user && recentReservations.length > 0 && (
         <section>
-          <div className="mb-5 flex items-end justify-between">
+          <div className="mb-4 flex items-end justify-between sm:mb-5">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">Rezervările mele</h2>
+              <h2 className="text-xl font-bold tracking-tight sm:text-2xl">Rezervările mele</h2>
               <p className="mt-0.5 text-sm text-muted-foreground">Cele mai recente bilete</p>
             </div>
             <Button asChild variant="ghost" size="sm" className="shrink-0">
@@ -603,15 +605,15 @@ export default function DashboardPage() {
 
       {/* CTA banner — guests only */}
       {!user && (
-        <section className="overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-accent/8 to-primary/5 px-8 py-10 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/15">
-            <Ticket className="h-7 w-7 text-primary" />
+        <section className="overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-accent/8 to-primary/5 px-4 py-8 text-center sm:px-8 sm:py-10">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 sm:h-14 sm:w-14">
+            <Ticket className="h-6 w-6 text-primary sm:h-7 sm:w-7" />
           </div>
-          <h2 className="mb-2 text-2xl font-bold">Gata să rezervi?</h2>
+          <h2 className="mb-2 text-xl font-bold sm:text-2xl">Gata să rezervi?</h2>
           <p className="mx-auto mb-6 max-w-sm text-sm text-muted-foreground">
             Creează un cont gratuit și rezervă-ți locul la filmele preferate în câteva secunde.
           </p>
-          <div className="flex justify-center gap-3">
+          <div className="flex flex-wrap justify-center gap-3">
             <Button asChild size="lg">
               <Link to="/register">Creează cont</Link>
             </Button>
