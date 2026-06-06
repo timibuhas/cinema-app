@@ -80,41 +80,29 @@ def check_verification_code(payload: VerifyEmailCheckRequest):
 
 # ===== LOGIN =====
 @router.post("/login")
-def login(user: schemas.user.UserLogin, response: Response, db: Session = Depends(get_db)):
+def login(user: schemas.user.UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
 
     if not db_user or not verify_password(user.password, db_user.password):
-        # Folosim HTTPException pentru status corect
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
             headers={"WWW-Authenticate": "Bearer"}
         )
 
-    # Creăm tokenul JWT
     token_data = {
         "sub": str(db_user.id),
         "role": db_user.role,
     }
     token = create_access_token(token_data)
 
-    response.set_cookie(
-        key="access_token",
-        value=token,
-        httponly=True,
-        secure=False,
-        samesite="lax",    # sau "strict"
-        max_age=60 * 60 * 24  # 1 zi
-    )
-
     return {
-        "message": "Login successful",
-        "role": db_user.role
+        "token": token,
+        "role": db_user.role,
     }
 
 @router.post("/logout")
-def logout(response: Response):
-    response.delete_cookie(key="access_token")  # șterge cookie-ul
+def logout():
     return {"message": "Logged out successfully"}
 
     

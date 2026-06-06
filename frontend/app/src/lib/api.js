@@ -45,15 +45,16 @@ async function request(path, options = {}) {
     method = "GET",
     body,
     headers,
-    credentials = "include",
     isFormData = false,
   } = options;
 
+  const token = localStorage.getItem("token");
+
   const response = await fetch(getAbsoluteApiUrl(path), {
     method,
-    credentials,
     headers: {
       ...(isFormData || body === undefined ? {} : { "Content-Type": "application/json" }),
+      ...(token ? { "Authorization": `Bearer ${token}` } : {}),
       ...(headers || {}),
     },
     body:
@@ -96,6 +97,15 @@ export const moviesApi = {
   update: (id, payload) => request(`/movies/${id}`, { method: "PUT", body: payload }),
   remove: (id) => request(`/movies/${id}`, { method: "DELETE" }),
   uploadImage: (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return request("/movies/upload-image", {
+      method: "POST",
+      body: formData,
+      isFormData: true,
+    });
+  },
+  uploadBanner: (file) => {
     const formData = new FormData();
     formData.append("file", file);
     return request("/movies/upload-image", {

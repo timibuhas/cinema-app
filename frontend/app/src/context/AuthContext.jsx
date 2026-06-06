@@ -56,6 +56,9 @@ export function AuthProvider({ children }) {
   const login = useCallback(
     async (payload) => {
       const response = await authApi.login(payload);
+      if (response?.token) {
+        localStorage.setItem("token", response.token);
+      }
       await refreshUser();
       return response;
     },
@@ -68,6 +71,7 @@ export function AuthProvider({ children }) {
     try {
       await authApi.logout();
     } finally {
+      localStorage.removeItem("token");
       setUser(null);
     }
   }, []);
