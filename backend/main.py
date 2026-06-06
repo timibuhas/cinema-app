@@ -19,7 +19,7 @@ from scheduler import create_scheduler
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     with engine.connect() as conn:
-        for col in ["genre", "director", "actors", "rating"]:
+        for col in ["genre", "director", "actors", "rating", "banner_image_url", "trailer_url"]:
             conn.execute(text(f"ALTER TABLE movies ADD COLUMN IF NOT EXISTS {col} TEXT"))
         conn.commit()
 
@@ -40,6 +40,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "https://cinema-app-1-01ha.onrender.com",
     ],
     allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3})(:\d+)?$",
     allow_credentials=True,
