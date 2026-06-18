@@ -75,6 +75,7 @@ def _call_ollama(messages: list[dict[str, str]], json_mode: bool = False) -> str
         "model": OLLAMA_MODEL,
         "messages": messages,
         "stream": False,
+        "options": {"num_ctx": 8192},
     }
     if json_mode:
         payload["format"] = "json"
@@ -132,33 +133,35 @@ def _build_database_context(db: Session, current_user: dict[str, Any]) -> dict[s
         user_id = None
 
     now = datetime.now()
-    movies = db.query(Movie).order_by(Movie.title.asc()).limit(80).all()
-    halls = db.query(Hall).order_by(Hall.name.asc()).limit(50).all()
+    movies = db.query(Movie).order_by(Movie.title.asc()).limit(50).all()
+    halls = db.query(Hall).order_by(Hall.name.asc()).limit(20).all()
     screenings = (
         db.query(Screening)
         .options(joinedload(Screening.movie), joinedload(Screening.hall))
         .filter(Screening.start_time >= now)
         .order_by(Screening.start_time.asc())
-        .limit(120)
+        .limit(40)
         .all()
     )
 
     reservations_q = (
         db.query(Reservation)
+        .join(Screening, Reservation.screening_id == Screening.id)
         .options(
             joinedload(Reservation.user),
             joinedload(Reservation.screening).joinedload(Screening.movie),
             joinedload(Reservation.screening).joinedload(Screening.hall),
             joinedload(Reservation.seat),
         )
-        .order_by(Reservation.reserved_at.desc())
+        .filter(Screening.start_time >= now)
+        .order_by(Screening.start_time.asc())
     )
     if role != "admin" and user_id:
         reservations_q = reservations_q.filter(Reservation.user_id == user_id)
-    reservations = reservations_q.limit(120).all()
+    reservations = reservations_q.limit(30).all()
 
     return {
-        "generated_at_utc": _utc_iso(now),
+        "now": _utc_iso(now),
         "user_role": role,
         "movies": [
             {
@@ -167,9 +170,6 @@ def _build_database_context(db: Session, current_user: dict[str, Any]) -> dict[s
                 "duration": m.duration,
                 "genre": m.genre,
                 "director": m.director,
-                "actors": m.actors,
-                "description": m.description,
-                "rating": m.rating,
             }
             for m in movies
         ],
@@ -195,7 +195,7 @@ def _build_database_context(db: Session, current_user: dict[str, Any]) -> dict[s
                 "screening_id": str(r.screening_id),
                 "seat_id": str(r.seat_id),
                 "seat": f"{r.seat.row}{r.seat.number}" if r.seat else None,
-                "reserved_at": _utc_iso(r.reserved_at),
+                "screening_start": _utc_iso(r.screening.start_time) if r.screening else None,
             }
             for r in reservations
         ],
@@ -664,18 +664,35 @@ def ask_chatbot(payload: ChatRequest, db: Session = Depends(get_db), current_use
             "role": "system",
             "content": (
                 "Ești un asistent pentru o aplicație de cinema. "
-                "Folosește contextul bazei de date ca sursă de adevăr. "
-                "Dacă informațiile lipsesc, spune clar. "
-                "Răspunde întotdeauna în limba română."
+                "Răspunde EXCLUSIV în limba română. Nu folosi nicio altă limbă. "
+                "Folosește DOAR informațiile de mai jos ca sursă de adevăr. Nu inventa date."
             ),
         }
     ]
     if payload.use_database:
-        messages.append({"role": "system", "content": f"DB context JSON:\n{json.dumps(db_context, ensure_ascii=False)}"})
+        ctx = db_context
+        now_str = ctx.get("now", "")
+        lines = [f"Data și ora curentă: {now_str}\n"]
+
+        lines.append("=== FILME ===")
+        for m in ctx.get("movies", []):
+            lines.append(f"- {m['title']} | gen: {m.get('genre', '?')} | durata: {m.get('duration', '?')} min | regizor: {m.get('director', '?')} | id: {m['id']}")
+
+        lines.append("\n=== URMATOARELE PROIECTII (sortate dupa ora, cele mai apropiate primele) ===")
+        for s in ctx.get("screenings", []):
+            lines.append(f"- {s['start_time']} | film: {s['movie']} | sala: {s['hall']}")
+
+        lines.append("\n=== REZERVARILE MELE VIITOARE (sortate dupa ora proiectiei) ===")
+        for r in ctx.get("reservations", []):
+            lines.append(f"- {r.get('movie', '?')} | sala: {r.get('hall', '?')} | loc: {r.get('seat', '?')} | data proiectiei: {r.get('screening_start', r.get('reserved_at', '?'))}")
+
+        messages.append({"role": "system", "content": "\n".join(lines)})
+
     for msg in payload.history[-20:]:
         content = msg.content.strip()
         if content:
             messages.append({"role": msg.role, "content": content})
+    messages.append({"role": "system", "content": "Răspunde DOAR în limba română."})
     messages.append({"role": "user", "content": payload.message.strip()})
 
     answer = _call_ollama(messages)
