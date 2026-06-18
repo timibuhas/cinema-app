@@ -13,7 +13,7 @@ def _cfg():
         "smtp_user":      smtp_user,
         "smtp_password":  os.getenv("SMTP_PASSWORD", ""),
         "email_from":     os.getenv("EMAIL_FROM", smtp_user),
-        "email_from_name": os.getenv("EMAIL_FROM_NAME", "CinemaApp"),
+        "email_from_name": os.getenv("EMAIL_FROM_NAME", "TapTicket"),
         "twilio_sid":     os.getenv("TWILIO_ACCOUNT_SID", ""),
         "twilio_token":   os.getenv("TWILIO_AUTH_TOKEN", ""),
         "twilio_from":    os.getenv("TWILIO_PHONE_FROM", ""),
@@ -57,7 +57,7 @@ def _email_layout(title: str, greeting: str, body_rows: list[tuple[str, str]], f
         <!-- Header -->
         <tr>
           <td style="background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);padding:32px 40px;text-align:center;">
-            <p style="margin:0;font-size:28px;font-weight:800;color:#fff;letter-spacing:-0.5px">🎬 CinemaApp</p>
+            <p style="margin:0;font-size:28px;font-weight:800;color:#fff;letter-spacing:-0.5px">🎬 TapTicket</p>
             <p style="margin:8px 0 0;font-size:14px;color:rgba(255,255,255,.6)">{title}</p>
           </td>
         </tr>
@@ -77,7 +77,7 @@ def _email_layout(title: str, greeting: str, body_rows: list[tuple[str, str]], f
         <!-- Footer -->
         <tr>
           <td style="padding:20px 40px;background:#f8f8fa;border-top:1px solid #eee;text-align:center;">
-            <p style="margin:0;font-size:12px;color:#aaa">CinemaApp &mdash; aplicația ta pentru cinema</p>
+            <p style="margin:0;font-size:12px;color:#aaa">TapTicket &mdash; aplicația ta pentru cinema</p>
           </td>
         </tr>
 
@@ -169,7 +169,7 @@ def notify_reservation_confirmed(
     send_email(user_email, f"Confirmare rezervare — {movie_title}", html)
     send_sms(
         user_phone,
-        f"✓ Rezervare confirmată! {movie_title} · {time} · Sala {hall_name} · Locuri: {seats_str}. CinemaApp",
+        f"✓ Rezervare confirmată! {movie_title} · {time} · Sala {hall_name} · Locuri: {seats_str}. TapTicket",
     )
 
 
@@ -200,7 +200,7 @@ def notify_reservation_modified(
     send_email(user_email, f"Rezervare modificată — {movie_title}", html)
     send_sms(
         user_phone,
-        f"✎ Rezervare modificată! {movie_title} · {time} · Sala {hall_name} · Locuri noi: {seats_str}. CinemaApp",
+        f"✎ Rezervare modificată! {movie_title} · {time} · Sala {hall_name} · Locuri noi: {seats_str}. TapTicket",
     )
 
 
@@ -231,5 +231,5 @@ def notify_reservation_reminder(
     send_email(user_email, f"Reminder: mâine ai rezervare la {movie_title}", html)
     send_sms(
         user_phone,
-        f"🍿 Reminder! Mâine: {movie_title} · {time} · Sala {hall_name} · Locuri: {seats_str}. CinemaApp",
+        f"🍿 Reminder! Mâine: {movie_title} · {time} · Sala {hall_name} · Locuri: {seats_str}. TapTicket",
     )

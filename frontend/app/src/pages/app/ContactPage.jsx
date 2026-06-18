@@ -9,9 +9,9 @@ import { contactApi } from "@/lib/api";
 import PageFrame from "@/pages/app/PageFrame";
 
 const INFO_ITEMS = [
-  { icon: Mail, label: "Email", value: "contact@cinemaapp.ro" },
+  { icon: Mail, label: "Email", value: "tapticketcinema@gmail.com" },
   { icon: Phone, label: "Telefon", value: "+40 700 000 000" },
-  { icon: MapPin, label: "Adresă", value: "București, România" },
+  { icon: MapPin, label: "Adresă", value: "Oradea, România" },
 ];
 
 const EMPTY_FORM = { name: "", email: "", subject: "", message: "" };

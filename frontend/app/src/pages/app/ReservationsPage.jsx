@@ -27,13 +27,6 @@ import { useAuth } from "@/context/AuthContext";
 import PageFrame from "@/pages/app/PageFrame";
 import LoadingCard from "@/pages/app/LoadingCard";
 
-function asUtc(value) {
-  if (!value) return null;
-  return typeof value === "string" && !/Z|[+-]\d{2}:\d{2}$/.test(value)
-    ? new Date(value + "Z")
-    : new Date(value);
-}
-
 function formatDate(value) {
   if (!value) return "—";
   return new Date(value).toLocaleString("ro-RO", { dateStyle: "medium", timeStyle: "short" });
@@ -43,6 +36,7 @@ function formatDate(value) {
 function ReservationCard({ group, screening, ownerLabel, isAdmin, onDelete, onEdit }) {
   const movie = screening?.movie;
   const hall = screening?.hall;
+  const isPast = screening?.start_time ? new Date(screening.start_time) < new Date() : false;
   const genres = movie?.genre
     ? movie.genre.split(",").map((g) => g.trim()).filter(Boolean)
     : [];
@@ -125,26 +119,28 @@ function ReservationCard({ group, screening, ownerLabel, isAdmin, onDelete, onEd
               </Badge>
             ))}
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-1.5 rounded-full"
-              onClick={onEdit}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Modifică locul</span>
-              <span className="sm:hidden">Modifică</span>
-            </Button>
-            <Button
-              size="sm"
-              className="gap-1.5 rounded-full bg-red-500 text-white shadow-sm hover:bg-red-500/90"
-              onClick={onDelete}
-            >
-              <X className="h-3.5 w-3.5" />
-              Anulează
-            </Button>
-          </div>
+          {!isPast && (
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 rounded-full"
+                onClick={onEdit}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Modifică locul</span>
+                <span className="sm:hidden">Modifică</span>
+              </Button>
+              <Button
+                size="sm"
+                className="gap-1.5 rounded-full bg-red-500 text-white shadow-sm hover:bg-red-500/90"
+                onClick={onDelete}
+              >
+                <X className="h-3.5 w-3.5" />
+                Anulează
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Reserved at */}
@@ -305,6 +301,7 @@ export default function ReservationsPage() {
   }, [movieFilterId, screeningFilterId, screenings, screeningsById, form.screening_id, isAdmin]);
 
   useEffect(() => {
+    if (!formOpen) return;
     let mounted = true;
     async function loadSeats() {
       if (!form.screening_id) { setAvailableSeats([]); return; }
@@ -320,7 +317,7 @@ export default function ReservationsPage() {
     }
     loadSeats();
     return () => { mounted = false; };
-  }, [form.screening_id]);
+  }, [form.screening_id, formOpen]);
 
   function toggleSeat(seatId) {
     setForm((prev) => ({
@@ -377,6 +374,8 @@ export default function ReservationsPage() {
   }
 
   // ── Edit seats state ──────────────────────────────────────────────────────
+  const [tab, setTab] = useState("viitoare");
+
   const [editGroup, setEditGroup] = useState(null);
   const [editSeats, setEditSeats] = useState([]);
   const [editSelectedIds, setEditSelectedIds] = useState([]);
@@ -521,10 +520,12 @@ export default function ReservationsPage() {
                   value={form.screening_id}
                   onValueChange={(v) => setForm((p) => ({ ...p, screening_id: v, seat_ids: [] }))}
                 >
-                  <SelectTrigger><SelectValue placeholder="Alege proiecția" /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger className="h-auto min-h-10 [&>span]:line-clamp-2 [&>span]:whitespace-normal [&>span]:text-left [&>span]:leading-snug">
+                    <SelectValue placeholder="Alege proiecția" />
+                  </SelectTrigger>
+                  <SelectContent className="max-w-[var(--radix-select-trigger-width)]">
                     {filteredScreenings.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
+                      <SelectItem key={s.id} value={s.id} className="whitespace-normal py-2 leading-snug pr-6">
                         {s.movie?.title || "Film"} — {formatDate(s.start_time)}
                       </SelectItem>
                     ))}
@@ -820,30 +821,76 @@ export default function ReservationsPage() {
             </div>
           </CardContent>
         </Card>
-      ) : (
-        <div className="space-y-3">
-          {filteredGroupedReservations.map((group) => {
-            const screening = screeningsById[group.screening_id];
-            const ownerLabel = group.user
-              ? `${group.user.first_name} ${group.user.last_name}`
-              : usersById[group.user_id]
-              ? `${usersById[group.user_id].first_name} ${usersById[group.user_id].last_name}`
-              : group.user_id?.slice(0, 8);
+      ) : (() => {
+        const now = new Date();
+        const upcoming = filteredGroupedReservations.filter((g) => {
+          const s = screeningsById[g.screening_id];
+          
+          return s?.start_time ? new Date(s.start_time) >= now : true;
+        });
+        
+        const past = filteredGroupedReservations.filter((g) => {
+          const s = screeningsById[g.screening_id];
+          return s?.start_time ? new Date(s.start_time) < now : false;
+        });
+        const visible = tab === "viitoare" ? upcoming : past;
 
-            return (
-              <ReservationCard
-                key={group.key}
-                group={group}
-                screening={screening}
-                ownerLabel={ownerLabel}
-                isAdmin={isAdmin}
-                onDelete={() => deleteGroup(group.items.map((r) => r.id))}
-                onEdit={() => openEditDialog(group)}
-              />
-            );
-          })}
-        </div>
-      )}
+        return (
+          <div className="space-y-4">
+            {/* Toggle buttons */}
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant={tab === "viitoare" ? "default" : "outline"}
+                className="rounded-full"
+                onClick={() => setTab("viitoare")}
+              >
+                Viitoare
+              </Button>
+              <Button
+                size="sm"
+                variant={tab === "trecute" ? "default" : "outline"}
+                className="rounded-full"
+                onClick={() => setTab("trecute")}
+              >
+                Trecute
+              </Button>
+            </div>
+
+            {/* Cards */}
+            {visible.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/60 py-12 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                  <Ticket className="h-6 w-6 text-muted-foreground/50" />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {tab === "viitoare" ? "Nu ai rezervări viitoare" : "Nu ai rezervări trecute"}
+                </p>
+                {tab === "viitoare" && (
+                  <Button size="sm" onClick={() => setFormOpen(true)} className="gap-1.5">
+                    <Plus className="h-3.5 w-3.5" />
+                    Rezervare nouă
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className={`space-y-3 ${tab === "trecute" ? "opacity-60" : ""}`}>
+                {visible.map((group) => (
+                  <ReservationCard
+                    key={group.key}
+                    group={group}
+                    screening={screeningsById[group.screening_id]}
+                    ownerLabel={null}
+                    isAdmin={false}
+                    onDelete={() => deleteGroup(group.items.map((r) => r.id))}
+                    onEdit={() => openEditDialog(group)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </PageFrame>
   );
 }

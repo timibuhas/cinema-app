@@ -252,9 +252,6 @@ export default function MovieDetailPage() {
                   Vezi proiecții
                 </Link>
               </Button>
-              <Button asChild variant="outline">
-                <Link to={`/screenings?movie=${movie.id}`}>Rezervă bilet</Link>
-              </Button>
             </div>
           </div>
         </div>

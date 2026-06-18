@@ -35,7 +35,7 @@ def send_verification_email(payload: VerifyEmailSendRequest):
              style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
         <tr>
           <td style="background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);padding:28px 40px;text-align:center;">
-            <p style="margin:0;font-size:26px;font-weight:800;color:#fff">🎬 CinemaApp</p>
+            <p style="margin:0;font-size:26px;font-weight:800;color:#fff">🎬 TapTicket</p>
             <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,.6)">Verificare adresă de email</p>
           </td>
         </tr>
@@ -64,7 +64,7 @@ def send_verification_email(payload: VerifyEmailSendRequest):
 </body>
 </html>"""
 
-    ok = send_email(payload.email, "Cod verificare cont — CinemaApp", html)
+    ok = send_email(payload.email, "Cod verificare cont — TapTicket", html)
     if not ok:
         raise HTTPException(status_code=500, detail="Nu s-a putut trimite email-ul de verificare.")
     return {"message": "Cod trimis"}

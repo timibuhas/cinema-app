@@ -9,7 +9,7 @@ import { chatApi } from "@/lib/api";
 const INITIAL_ASSISTANT_MESSAGE = {
   role: "assistant",
   content:
-    "Hi! Ask me about movies, screenings, halls, and reservations. I answer using your app data.",
+    "Salut! Întreabă-mă despre filme, proiecții, săli și rezervări. Îți răspund folosind datele din aplicația ta.",
 };
 
 function nowTime() {
@@ -98,10 +98,10 @@ export default function ChatBubbleWidget() {
                 Cinema Assistant
               </CardTitle>
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon-sm" onClick={clearChat} title="Clear chat">
+                <Button variant="ghost" size="icon-sm" onClick={clearChat} title="Șterge chat">
                   <Trash2 className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon-sm" onClick={() => setOpen(false)} title="Close chat">
+                <Button variant="ghost" size="icon-sm" onClick={() => setOpen(false)} title="Închide chat">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -152,7 +152,7 @@ export default function ChatBubbleWidget() {
                 }
               }}
               className="min-h-16"
-              placeholder="Ask a question..."
+              placeholder="Pune o întrebare..."
             />
 
             <div className="flex justify-end">
@@ -160,12 +160,12 @@ export default function ChatBubbleWidget() {
                 {sending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Thinking...
+                    Gândesc...
                   </>
                 ) : (
                   <>
                     <Send className="mr-2 h-4 w-4" />
-                    Send
+                    Trimite
                   </>
                 )}
               </Button>

@@ -30,7 +30,7 @@ export default function Login() {
       await login({ email, password });
       navigate(targetRoute, { replace: true });
     } catch (submissionError) {
-      setError(submissionError.message || "Login failed");
+      setError(submissionError.message || "Autentificare eșuată.");
     } finally {
       setSubmitting(false);
     }
@@ -40,7 +40,7 @@ export default function Login() {
     <div className="mx-auto flex min-h-[calc(100vh-10rem)] w-full max-w-md items-center justify-center py-8">
       <Card className="w-full border-border/70 bg-card/95 shadow-xl">
         <CardHeader>
-          <CardTitle className="text-3xl">Sign in</CardTitle>
+          <CardTitle className="text-3xl">Autentifică-te</CardTitle>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={handleSubmit}>
@@ -57,7 +57,7 @@ export default function Login() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Parolă</Label>
               <Input
                 id="password"
                 type="password"
@@ -76,13 +76,13 @@ export default function Login() {
 
             <Button className="w-full shadow-lg" type="submit" disabled={submitting}>
               <LogIn className="mr-2 h-4 w-4" />
-              {submitting ? "Signing in..." : "Sign in"}
+              {submitting ? "Se conectează..." : "Autentifică-te"}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
-              No account yet?{" "}
+              Nu ai cont?{" "}
               <Link className="font-medium text-primary underline-offset-4 hover:underline" to="/register">
-                Create one
+                Creează-ți unul
               </Link>
             </p>
           </form>

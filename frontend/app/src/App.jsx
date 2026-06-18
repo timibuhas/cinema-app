@@ -14,7 +14,6 @@ import ScreeningsPage from "@/pages/app/ScreeningsPage";
 import ReservationsPage from "@/pages/app/ReservationsPage";
 import HallsPage from "@/pages/app/HallsPage";
 import UsersPage from "@/pages/app/UsersPage";
-import ChatbotPage from "@/pages/app/ChatbotPage";
 import ContactPage from "@/pages/app/ContactPage";
 import MovieDetailPage from "@/pages/app/MovieDetailPage";
 
@@ -39,7 +38,6 @@ export default function App() {
           {/* Protected pages — require login */}
           <Route element={<ProtectedRoute />}>
             <Route path="/reservations" element={<ReservationsPage />} />
-            <Route path="/chat" element={<ChatbotPage />} />
 
             <Route element={<RoleRoute allowedRoles={["admin"]} />}>
               <Route path="/halls" element={<HallsPage />} />

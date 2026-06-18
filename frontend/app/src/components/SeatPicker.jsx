@@ -5,8 +5,8 @@
   onSelectSeat,
   onToggleSeat,
 }) {
-  const SEAT_WIDTH = 52;
-  const SEAT_GAP = 8;
+  const SEAT_WIDTH = 44;
+  const SEAT_GAP = 6;
 
   const getRowIndex = (rowLetter) => {
     const value = String(rowLetter || "").trim().toUpperCase();
@@ -91,12 +91,10 @@
 
   return (
     <div className="space-y-4 rounded-2xl border border-border/70 bg-background/70 p-4 shadow-sm">
-      <div className="text-center text-sm font-medium text-muted-foreground">Screen</div>
-
-      <div
-        className="mx-auto h-2 rounded-full bg-gradient-to-r from-primary/40 via-primary/70 to-primary/40"
-        style={{ width: matrixWidth ? `${matrixWidth}px` : "100%" }}
-      />
+      <div className="flex flex-col items-center gap-2">
+        <div className="h-1.5 w-3/4 rounded-sm bg-primary" />
+        <div className="text-center text-xs font-medium tracking-widest text-muted-foreground uppercase">Ecran</div>
+      </div>
 
       <div className="overflow-x-auto">
         <div
@@ -151,15 +149,15 @@
       <div className="flex flex-wrap gap-4 pt-2 text-xs text-muted-foreground">
         <div className="flex items-center gap-2">
           <span className="h-4 w-4 rounded border border-border bg-card" />
-          <span>Free</span>
+          <span>Liber</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="h-4 w-4 rounded border border-primary bg-primary" />
-          <span>Selected</span>
+          <span>Selectat</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="h-4 w-4 rounded border border-border bg-muted" />
-          <span>Occupied</span>
+          <span>Ocupat</span>
         </div>
       </div>
     </div>

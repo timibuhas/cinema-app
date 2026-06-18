@@ -50,6 +50,8 @@ const emptyMovie = {
   description: "",
   duration: "",
   image_url: "",
+  banner_image_url: "",
+  trailer_url: "",
   genre: "",
   director: "",
   actors: "",
@@ -60,6 +62,7 @@ function MovieDialog({ trigger, initialValue, onSave }) {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState(initialValue || emptyMovie);
 
@@ -89,6 +92,21 @@ function MovieDialog({ trigger, initialValue, onSave }) {
     }
   }
 
+  async function handleBannerChange(e) {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+    setUploadingBanner(true);
+    setError("");
+    try {
+      const result = await moviesApi.uploadBanner(selected);
+      setForm((p) => ({ ...p, banner_image_url: result.image_url }));
+    } catch (err) {
+      setError(err.message || "Banner upload failed");
+    } finally {
+      setUploadingBanner(false);
+    }
+  }
+
   async function handleSave() {
     setSubmitting(true);
     setError("");
@@ -99,6 +117,8 @@ function MovieDialog({ trigger, initialValue, onSave }) {
         description: form.description,
         duration: Number(form.duration),
         image_url: form.image_url || null,
+        banner_image_url: form.banner_image_url || null,
+        trailer_url: form.trailer_url || null,
         genre: form.genre || null,
         director: form.director || null,
         actors: form.actors || null,
@@ -119,86 +139,135 @@ function MovieDialog({ trigger, initialValue, onSave }) {
         <DialogHeader className="shrink-0 border-b border-border/50 pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Film className="h-5 w-5 text-primary" />
-            {initialValue ? `Edit — ${initialValue.title}` : "Add new movie"}
+            {initialValue ? `Edit — ${initialValue.title}` : "Adaugă film"}
           </DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto py-4">
           <div className="grid gap-6 md:grid-cols-[176px_1fr]">
 
-            {/* ── Left: poster ─────────────────────────────── */}
-            <div className="space-y-3">
-              <label className="group relative block cursor-pointer">
-                <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-muted">
-                  {form.image_url ? (
-                    <img
-                      src={resolveImageUrl(form.image_url)}
-                      alt="Poster preview"
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground/40">
-                      <Film className="h-10 w-10" />
-                      <span className="text-xs">No poster</span>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-black/55 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                    {uploading ? (
-                      <span className="text-xs font-semibold text-white">Uploading…</span>
+            {/* ── Left: poster + banner ─────────────────────── */}
+            <div className="space-y-4">
+              {/* Poster */}
+              <div className="space-y-1.5">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Poster (2:3)</p>
+                <label className="group relative block cursor-pointer">
+                  <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-muted">
+                    {form.image_url ? (
+                      <img
+                        src={resolveImageUrl(form.image_url)}
+                        alt="Poster preview"
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
                     ) : (
-                      <>
-                        <UploadCloud className="h-7 w-7 text-white" />
-                        <span className="text-xs font-semibold text-white">
-                          {form.image_url ? "Change poster" : "Upload poster"}
-                        </span>
-                      </>
+                      <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground/40">
+                        <Film className="h-10 w-10" />
+                        <span className="text-xs">Niciun poster</span>
+                      </div>
                     )}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-black/55 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      {uploading ? (
+                        <span className="text-xs font-semibold text-white">Se încarcă...</span>
+                      ) : (
+                        <>
+                          <UploadCloud className="h-7 w-7 text-white" />
+                          <span className="text-xs font-semibold text-white">
+                            {form.image_url ? "Change poster" : "Upload poster"}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={handleFileChange}
-                  disabled={uploading}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={handleFileChange}
+                    disabled={uploading}
+                  />
+                </label>
+                <Input
+                  value={form.image_url || ""}
+                  onChange={field("image_url")}
+                  placeholder="sau introdu URL…"
+                  className="h-8 text-xs"
                 />
-              </label>
+              </div>
 
-              <Input
-                value={form.image_url || ""}
-                onChange={field("image_url")}
-                placeholder="Or paste URL…"
-                className="h-8 text-xs"
-              />
+              {/* Banner */}
+              <div className="space-y-1.5">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Banner Hero (16:9)</p>
+                <label className="group relative block cursor-pointer">
+                  <div className="relative aspect-video overflow-hidden rounded-2xl bg-muted">
+                    {form.banner_image_url ? (
+                      <img
+                        src={resolveImageUrl(form.banner_image_url)}
+                        alt="Banner preview"
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground/40">
+                        <UploadCloud className="h-8 w-8" />
+                        <span className="text-xs">Niciun banner</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-black/55 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      {uploadingBanner ? (
+                        <span className="text-xs font-semibold text-white">Se încarcă...</span>
+                      ) : (
+                        <>
+                          <UploadCloud className="h-7 w-7 text-white" />
+                          <span className="text-xs font-semibold text-white">
+                            {form.banner_image_url ? "Change banner" : "Upload banner"}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={handleBannerChange}
+                    disabled={uploadingBanner}
+                  />
+                </label>
+                <Input
+                  value={form.banner_image_url || ""}
+                  onChange={field("banner_image_url")}
+                  placeholder="Or paste URL…"
+                  className="h-8 text-xs"
+                />
+              </div>
             </div>
 
             {/* ── Right: fields ─────────────────────────────── */}
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="mv-title">Title</Label>
+                <Label htmlFor="mv-title">Titlu</Label>
                 <Input
                   id="mv-title"
                   value={form.title}
                   onChange={field("title")}
                   className="font-semibold"
-                  placeholder="Movie title"
+                  placeholder="Titlul filmului"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="mv-desc">Description</Label>
+                <Label htmlFor="mv-desc">Descriere</Label>
                 <Textarea
                   id="mv-desc"
                   value={form.description}
                   onChange={field("description")}
                   rows={3}
-                  placeholder="Short synopsis…"
+                  placeholder="O scurtă descriere..."
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="mv-dur">Duration (min)</Label>
+                  <Label htmlFor="mv-dur">Durată (min)</Label>
                   <Input
                     id="mv-dur"
                     type="number"
@@ -221,12 +290,12 @@ function MovieDialog({ trigger, initialValue, onSave }) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="mv-genre">Genre</Label>
+                  <Label htmlFor="mv-genre">Gen</Label>
                   <Input
                     id="mv-genre"
                     value={form.genre || ""}
                     onChange={field("genre")}
-                    placeholder="Action, Drama…"
+                    placeholder="Acțiune, Dramă…"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -235,19 +304,29 @@ function MovieDialog({ trigger, initialValue, onSave }) {
                     id="mv-dir"
                     value={form.director || ""}
                     onChange={field("director")}
-                    placeholder="Director name"
+                    placeholder="Numele directorului"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="mv-actors">Cast</Label>
+                <Label htmlFor="mv-actors">Actori</Label>
                 <Textarea
                   id="mv-actors"
                   value={form.actors || ""}
                   onChange={field("actors")}
                   rows={2}
                   placeholder="Actor 1, Actor 2…"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="mv-trailer">Trailer YouTube</Label>
+                <Input
+                  id="mv-trailer"
+                  value={form.trailer_url || ""}
+                  onChange={field("trailer_url")}
+                  placeholder="https://www.youtube.com/watch?v=..."
                 />
               </div>
             </div>
@@ -262,11 +341,11 @@ function MovieDialog({ trigger, initialValue, onSave }) {
 
         <DialogFooter className="shrink-0 border-t border-border/50 pt-4">
           <Button variant="outline" onClick={() => setOpen(false)} disabled={submitting}>
-            Cancel
+            Închide
           </Button>
           <Button onClick={handleSave} disabled={submitting} className="gap-2">
             <Check className="h-4 w-4" />
-            {submitting ? "Saving…" : "Save movie"}
+            {submitting ? "Se salvează..." : "Salvează"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -346,14 +425,14 @@ export default function MoviesPage() {
 
   return (
     <PageFrame
-      title="Movies"
+      title="Filme"
 
       actions={
         <>
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search movies"
+            placeholder="Caută filme"
             className="w-48"
           />
           <Select value={sortBy} onValueChange={setSortBy}>
@@ -361,10 +440,10 @@ export default function MoviesPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="title-asc">Title A-Z</SelectItem>
-              <SelectItem value="title-desc">Title Z-A</SelectItem>
-              <SelectItem value="duration-asc">Duration (shortest)</SelectItem>
-              <SelectItem value="duration-desc">Duration (longest)</SelectItem>
+              <SelectItem value="title-asc">Titlu A-Z</SelectItem>
+              <SelectItem value="title-desc">Titlu Z-A</SelectItem>
+              <SelectItem value="duration-asc">Durată (cea mai scurtă)</SelectItem>
+              <SelectItem value="duration-desc">Durată (cea mai lungă)</SelectItem>
             </SelectContent>
           </Select>
           {isAdmin ? (
@@ -373,7 +452,7 @@ export default function MoviesPage() {
               trigger={
                 <Button className="shadow-md">
                   <Plus className="mr-2 h-4 w-4" />
-                  Add movie
+                  Adaugă film
                 </Button>
               }
             />
@@ -388,11 +467,11 @@ export default function MoviesPage() {
       ) : null}
 
       {loading ? (
-        <LoadingCard message="Loading movies..." />
+        <LoadingCard message="Se încarcă filme..." />
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredMovies.map((movie) => (
-            <Card key={movie.id} className="overflow-hidden border-border/70 bg-card/92 pt-0 shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl">
+            <Card key={movie.id} className="flex flex-col overflow-hidden border-border/70 bg-card/92 pt-0 shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl">
               <Link to={`/movies/${movie.id}`} className="block">
                 <div className="relative aspect-[2/3] w-full overflow-hidden bg-muted">
                   {movie.image_url ? (
@@ -404,7 +483,7 @@ export default function MoviesPage() {
                   ) : (
                     <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
                       <ImagePlus className="h-5 w-5" />
-                      No poster provided
+                      Niciun poster
                     </div>
                   )}
                 </div>
@@ -435,25 +514,25 @@ export default function MoviesPage() {
                   <p className="text-xs text-muted-foreground">{movie.genre}</p>
                 ) : null}
                 {movie.director ? (
-                  <p className="text-xs text-muted-foreground">Dir. {movie.director}</p>
+                  <p className="text-xs text-muted-foreground">Regizor: {movie.director}</p>
                 ) : null}
               </CardHeader>
 
-              <CardContent className="space-y-4">
+              <CardContent className="flex flex-1 flex-col gap-4">
                 <p className="line-clamp-3 text-sm text-muted-foreground">{movie.description}</p>
 
                 {movie.actors ? (
                   <p className="line-clamp-2 text-xs text-muted-foreground">
-                    <span className="font-medium">Cast:</span> {movie.actors}
+                    <span className="font-medium">Actori:</span> {movie.actors}
                   </p>
                 ) : null}
 
-                <div className="flex flex-wrap gap-2">
+                <div className="mt-auto flex flex-wrap gap-2">
                   <Button asChild variant="outline">
-                    <Link to={`/screenings?movie=${movie.id}`}>View screenings</Link>
+                    <Link to={`/screenings?movie=${movie.id}`}>Proiecții</Link>
                   </Button>
                   <Button asChild>
-                    <Link to={`/reservations?movie=${movie.id}`}>Reserve</Link>
+                    <Link to={`/reservations?movie=${movie.id}`}>Rezervă</Link>
                   </Button>
                 </div>
 
@@ -465,13 +544,13 @@ export default function MoviesPage() {
                       trigger={
                         <Button size="sm" className="gap-1.5 rounded-full bg-amber-500 text-white shadow-sm hover:bg-amber-500/90">
                           <Pencil className="h-3.5 w-3.5" />
-                          Edit
+                          Modifică
                         </Button>
                       }
                     />
                     <Button size="sm" className="gap-1.5 rounded-full bg-red-500 text-white shadow-sm hover:bg-red-500/90" onClick={() => deleteMovie(movie.id)}>
                       <Trash2 className="h-3.5 w-3.5" />
-                      Delete
+                      Șterge
                     </Button>
                   </div>
                 ) : null}

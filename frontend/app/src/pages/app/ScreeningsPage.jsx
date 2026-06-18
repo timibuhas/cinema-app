@@ -146,7 +146,7 @@ function ScreeningDialog({ trigger, movies, halls, initialValue, onSave }) {
         ...(initialValue?.id ? { id: initialValue.id } : {}),
         movie_id: form.movie_id,
         hall_id: form.hall_id,
-        start_time: new Date(form.start_time).toISOString(),
+        start_time: form.start_time,
       });
       setOpen(false);
     } finally {
@@ -159,29 +159,29 @@ function ScreeningDialog({ trigger, movies, halls, initialValue, onSave }) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{initialValue ? "Edit screening" : "Create screening"}</DialogTitle>
+          <DialogTitle>{initialValue ? "Modifică proiecție" : "Adaugă proiecție"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-1">
           <div className="space-y-2">
-            <Label>Movie</Label>
+            <Label>Film</Label>
             <Select value={form.movie_id} onValueChange={(v) => setForm((p) => ({ ...p, movie_id: v }))}>
-              <SelectTrigger><SelectValue placeholder="Choose movie" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Alege film" /></SelectTrigger>
               <SelectContent>
                 {movies.map((m) => <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Hall</Label>
+            <Label>Sală</Label>
             <Select value={form.hall_id} onValueChange={(v) => setForm((p) => ({ ...p, hall_id: v }))}>
-              <SelectTrigger><SelectValue placeholder="Choose hall" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Alege sala" /></SelectTrigger>
               <SelectContent>
                 {halls.map((h) => <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="start-time">Start time</Label>
+            <Label htmlFor="start-time">Ora începerii</Label>
             <Input
               id="start-time"
               type="datetime-local"
@@ -192,7 +192,7 @@ function ScreeningDialog({ trigger, movies, halls, initialValue, onSave }) {
         </div>
         <DialogFooter>
           <Button type="button" onClick={handleSave} disabled={submitting}>
-            {submitting ? "Saving..." : "Save"}
+            {submitting ? "Se salvează..." : "Salvează"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -274,7 +274,7 @@ function ScreeningCard({ screening, isAdmin, movies, halls, onSave, onRemove }) 
         <div className="flex items-start justify-between gap-3">
           {/* Movie info */}
           <div className="min-w-0 flex-1">
-            <h3 className="truncate text-base font-bold leading-snug">
+            <h3 className="text-base font-bold leading-snug">
               {movie?.title || "Film necunoscut"}
             </h3>
             {genres.length > 0 && (
@@ -326,7 +326,7 @@ function ScreeningCard({ screening, isAdmin, movies, halls, onSave, onRemove }) 
                 trigger={
                   <Button size="sm" className="gap-1.5 rounded-full bg-amber-500 text-white shadow-sm hover:bg-amber-500/90">
                     <Pencil className="h-3.5 w-3.5" />
-                    Edit
+                    Modifică
                   </Button>
                 }
               />
@@ -336,7 +336,7 @@ function ScreeningCard({ screening, isAdmin, movies, halls, onSave, onRemove }) 
                 onClick={() => onRemove(screening.id)}
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                Delete
+                Șterge
               </Button>
             </>
           )}
@@ -445,7 +445,7 @@ export default function ScreeningsPage() {
 
   return (
     <PageFrame
-      title="Proiecții"
+      title="Program"
 
       actions={
         <>
@@ -453,13 +453,13 @@ export default function ScreeningsPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Caută film sau sală..."
-            className="w-48"
+            className="w-32 sm:w-48"
           />
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-32 sm:w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="time-asc">Cele mai vechi</SelectItem>
-              <SelectItem value="time-desc">Cele mai noi</SelectItem>
+              <SelectItem value="time-asc">Cel mai curând</SelectItem>
+              <SelectItem value="time-desc">Cel mai târziu</SelectItem>
               <SelectItem value="movie-asc">Film A-Z</SelectItem>
             </SelectContent>
           </Select>
@@ -471,7 +471,7 @@ export default function ScreeningsPage() {
               trigger={
                 <Button className="shadow-md">
                   <CalendarPlus className="mr-2 h-4 w-4" />
-                  New screening
+                  Adaugă proiecție
                 </Button>
               }
             />
@@ -502,7 +502,7 @@ export default function ScreeningsPage() {
         {/* Genre + hall + actions row */}
         <div className="flex flex-wrap items-center gap-3">
           <Select value={filterGenre} onValueChange={setFilterGenre}>
-            <SelectTrigger className="h-8 w-36 rounded-lg text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-8 w-32 rounded-lg text-xs sm:w-36"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Toate genurile</SelectItem>
               {genres.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
@@ -510,7 +510,7 @@ export default function ScreeningsPage() {
           </Select>
 
           <Select value={filterHall} onValueChange={setFilterHall}>
-            <SelectTrigger className="h-8 w-36 rounded-lg text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-8 w-32 rounded-lg text-xs sm:w-36"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Toate sălile</SelectItem>
               {halls.map((h) => <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>)}

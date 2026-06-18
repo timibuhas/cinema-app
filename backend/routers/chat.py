@@ -131,7 +131,7 @@ def _build_database_context(db: Session, current_user: dict[str, Any]) -> dict[s
     except ValueError:
         user_id = None
 
-    now = datetime.utcnow()
+    now = datetime.now()
     movies = db.query(Movie).order_by(Movie.title.asc()).limit(80).all()
     halls = db.query(Hall).order_by(Hall.name.asc()).limit(50).all()
     screenings = (
@@ -160,7 +160,19 @@ def _build_database_context(db: Session, current_user: dict[str, Any]) -> dict[s
     return {
         "generated_at_utc": _utc_iso(now),
         "user_role": role,
-        "movies": [{"id": str(m.id), "title": m.title, "duration": m.duration} for m in movies],
+        "movies": [
+            {
+                "id": str(m.id),
+                "title": m.title,
+                "duration": m.duration,
+                "genre": m.genre,
+                "director": m.director,
+                "actors": m.actors,
+                "description": m.description,
+                "rating": m.rating,
+            }
+            for m in movies
+        ],
         "halls": [{"id": str(h.id), "name": h.name, "capacity": h.capacity} for h in halls],
         "screenings": [
             {
@@ -272,8 +284,25 @@ def _apply_reservation_fallback(plan: dict[str, Any], message: str) -> dict[str,
     }
 
 
+CONFIRMATION_WORDS = {"da", "yes", "ok", "confirm", "confirma", "confirmă", "merge", "da!", "yes!", "ok!"}
+
+
+def _is_confirmation(message: str) -> bool:
+    return message.strip().lower().rstrip("!?.") in CONFIRMATION_WORDS
+
+
 def _plan_action(instruction: str, history: list[Any], db: Session, is_admin: bool) -> dict[str, Any]:
     planning_context = _build_database_context(db, {"role": "admin" if is_admin else "user", "sub": None})
+
+    is_confirm = _is_confirmation(instruction)
+    confirmation_hint = (
+        "IMPORTANT: The user just confirmed with a short affirmative word. "
+        "Look at the conversation history to find the movie title, hall name, screening date/time, and seat label "
+        "that were discussed. Extract those details and populate the data field for create_reservation. "
+        "Do NOT return needs_clarification if these details are present in the history.\n"
+        if is_confirm else ""
+    )
+
     messages: list[dict[str, str]] = [
         {
             "role": "system",
@@ -289,6 +318,7 @@ def _plan_action(instruction: str, history: list[Any], db: Session, is_admin: bo
                 "- screening can be screening_id or movie+hall+start_time.\n"
                 "- seat can be seat_id or seat_label like A5.\n"
                 "- Never output SQL.\n"
+                + confirmation_hint
             ),
         },
         {"role": "system", "content": f"is_admin={str(is_admin).lower()}"},
@@ -314,10 +344,16 @@ def _plan_action(instruction: str, history: list[Any], db: Session, is_admin: bo
     if not isinstance(missing, list):
         missing = []
     question = str(plan.get("clarification_question", "")).strip()
-    if action != "none" and intent == "qa":
-        intent = "mutation"
-    if action != "none" and missing:
-        intent = "needs_clarification"
+    # Dacă mesajul nu conține cuvinte de scriere, forțăm QA — Ollama clasifică greșit uneori
+    if not _looks_like_write_request(instruction) and not _is_confirmation(instruction):
+        intent = "qa"
+        action = "none"
+        missing = []
+    else:
+        if action != "none" and intent == "qa":
+            intent = "mutation"
+        if action != "none" and missing:
+            intent = "needs_clarification"
     return {"intent": intent, "action": action, "data": data, "missing_fields": missing, "question": question}
 
 
@@ -588,9 +624,26 @@ def ask_chatbot(payload: ChatRequest, db: Session = Depends(get_db), current_use
                     is_admin=can_manage_all_records,
                 )
                 return ChatResponse(answer=question, model=OLLAMA_MODEL, used_database=True)
+
+            # Validare explicită înainte de execuție — nu depindem de Ollama să detecteze câmpurile lipsă
+            if plan["action"] in {"create_reservation", "update_reservation"}:
+                data = plan["data"]
+                has_seat = data.get("seat_id") or data.get("seat") or data.get("seat_label")
+                has_screening = data.get("screening_id") or data.get("movie") or data.get("movie_title")
+                if not has_seat:
+                    return ChatResponse(answer="Ce loc dorești să rezervi? (ex: A5, B3)", model=OLLAMA_MODEL, used_database=True)
+                if not has_screening:
+                    return ChatResponse(answer="Pentru ce film și proiecție dorești rezervarea?", model=OLLAMA_MODEL, used_database=True)
+
             try:
                 summary = _execute_action(plan["action"], plan["data"], db, current_user=current_user)
             except HTTPException as exc:
+                if _is_confirmation(payload.message):
+                    return ChatResponse(
+                        answer="Nu am putut finaliza rezervarea. Te rog specifică din nou filmul, sala, ora proiecției și locul dorit (ex: A5).",
+                        model=OLLAMA_MODEL,
+                        used_database=True,
+                    )
                 return ChatResponse(
                     answer=f"Am nevoie de mai multe detalii înainte de execuție: {exc.detail}",
                     model=OLLAMA_MODEL,

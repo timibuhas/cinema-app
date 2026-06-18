@@ -1,8 +1,10 @@
+import os
 from datetime import datetime, timedelta
+
 import bcrypt
 from jose import jwt, JWTError
 
-SECRET_KEY = "supersecretkey"
+SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkey-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440
 

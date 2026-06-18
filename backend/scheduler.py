@@ -12,7 +12,7 @@ from models import Reservation, Screening
 def _send_reminders() -> None:
     db = SessionLocal()
     try:
-        tomorrow = (datetime.utcnow() + timedelta(days=1)).date()
+        tomorrow = (datetime.now() + timedelta(days=1)).date()
         day_start = datetime(tomorrow.year, tomorrow.month, tomorrow.day, 0, 0, 0)
         day_end   = datetime(tomorrow.year, tomorrow.month, tomorrow.day, 23, 59, 59)
 

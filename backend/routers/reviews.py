@@ -30,7 +30,7 @@ def create_review(
     if not movie:
         raise HTTPException(status_code=404, detail="Film negăsit.")
 
-    now = datetime.utcnow()
+    now = datetime.now()
     duration = movie.duration or 0
 
     eligible_screening = (
@@ -103,7 +103,7 @@ def can_review(movie_id: UUID, db: Session = Depends(get_db), user=Depends(get_c
     if not screenings:
         return CanReviewResponse(can_review=False, reason="no_reservation")
 
-    now = datetime.utcnow()
+    now = datetime.now()
     duration = movie.duration or 0
     finished = any(s.start_time + timedelta(minutes=duration) < now for s in screenings)
     if not finished:

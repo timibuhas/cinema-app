@@ -210,12 +210,12 @@ function HallDialog({ trigger, initialValue, onSave }) {
     setError("");
 
     if (!form.name.trim()) {
-      setError("Hall name is required.");
+      setError("Numele sălii este obligatoriu.");
       return;
     }
 
     if (activeSeatsCount === 0) {
-      setError("Select at least one seat (not X).");
+      setError("Selectează cel puțin un loc (nu X).");
       return;
     }
 
@@ -257,12 +257,12 @@ function HallDialog({ trigger, initialValue, onSave }) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
-          <DialogTitle>{initialValue ? "Edit hall" : "Create hall"}</DialogTitle>
+          <DialogTitle>{initialValue ? "Modifică sala" : "Creează sală"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-1">
           <div className="space-y-2">
-            <Label htmlFor="hall-name">Hall name</Label>
+            <Label htmlFor="hall-name">Numele sălii</Label>
             <Input
               id="hall-name"
               value={form.name}
@@ -274,7 +274,7 @@ function HallDialog({ trigger, initialValue, onSave }) {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="hall-rows">Rows</Label>
+              <Label htmlFor="hall-rows">Rânduri</Label>
               <Input
                 id="hall-rows"
                 type="number"
@@ -285,7 +285,7 @@ function HallDialog({ trigger, initialValue, onSave }) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="hall-cols">Seats per row</Label>
+              <Label htmlFor="hall-cols">Locuri per rând</Label>
               <Input
                 id="hall-cols"
                 type="number"
@@ -299,11 +299,10 @@ function HallDialog({ trigger, initialValue, onSave }) {
           </div>
 
           <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
-            <div className="mb-2 text-center text-sm font-medium text-muted-foreground">Ecran</div>
-            <div
-              className="mx-auto mb-4 h-2 rounded-full bg-muted"
-              style={{ width: matrixWidth ? `${matrixWidth}px` : "100%" }}
-            />
+            <div className="mb-4 flex flex-col items-center gap-2">
+              <div className="h-1.5 w-3/4 rounded-sm bg-primary" />
+              <div className="text-center text-xs font-medium tracking-widest text-muted-foreground uppercase">Ecran</div>
+            </div>
 
             {rowsCount > 0 && colsCount > 0 ? (
               <div className="overflow-x-auto">
@@ -341,8 +340,8 @@ function HallDialog({ trigger, initialValue, onSave }) {
                             ].join(" ")}
                             title={
                               active
-                                ? `Seat ${seatLabel}`
-                                : `Seat ${rowLabel}${colIndex + 1} does not exist`
+                                ? `Loc ${seatLabel}`
+                                : `Loc ${rowLabel}${colIndex + 1} nu există`
                             }
                           >
                             {active ? seatLabel : "X"}
@@ -355,7 +354,7 @@ function HallDialog({ trigger, initialValue, onSave }) {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Set rows and seats per row to generate the matrix.
+                Setează rânduri și locuri per rând pentru a genera matricea.
               </p>
             )}
           </div>
@@ -373,7 +372,7 @@ function HallDialog({ trigger, initialValue, onSave }) {
             onClick={handleSave}
             disabled={submitting || rowsCount <= 0 || colsCount <= 0}
           >
-            {submitting ? "Saving..." : "Save hall"}
+            {submitting ? "Se salvează..." : "Salvează"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -411,7 +410,7 @@ export default function HallsPage() {
     try {
       setHalls(await hallsApi.list());
     } catch (loadError) {
-      setError(loadError.message || "Could not load halls");
+      setError(loadError.message || "Nu s-au putut încărca sălile.");
     } finally {
       setLoading(false);
     }
@@ -438,14 +437,14 @@ export default function HallsPage() {
 
   return (
     <PageFrame
-      title="Halls"
-      description="Create hall matrices and mark missing seats with X."
+      title="Săli"
+      description="Crează matrici de săli și marchează locurile lipsă cu X."
       actions={
         <>
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search halls"
+            placeholder="Caută sală"
             className="w-40"
           />
           <Select value={sortBy} onValueChange={setSortBy}>
@@ -453,10 +452,10 @@ export default function HallsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="name-asc">Name A-Z</SelectItem>
-              <SelectItem value="name-desc">Name Z-A</SelectItem>
-              <SelectItem value="capacity-desc">Capacity (most)</SelectItem>
-              <SelectItem value="capacity-asc">Capacity (fewest)</SelectItem>
+              <SelectItem value="name-asc">Nume A-Z</SelectItem>
+              <SelectItem value="name-desc">Nume Z-A</SelectItem>
+              <SelectItem value="capacity-desc">Capacitate (mare)</SelectItem>
+              <SelectItem value="capacity-asc">Capacitate (mică)</SelectItem>
             </SelectContent>
           </Select>
           <HallDialog
@@ -464,7 +463,7 @@ export default function HallsPage() {
             trigger={
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                New hall
+                Sală nouă
               </Button>
             }
           />
@@ -478,7 +477,7 @@ export default function HallsPage() {
       ) : null}
 
       {loading ? (
-        <LoadingCard message="Loading halls..." />
+        <LoadingCard message="Se încarcă sălile..." />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filteredHalls.map((hall) => (
@@ -490,14 +489,14 @@ export default function HallsPage() {
                     {hall.name}
                   </CardTitle>
                   <Badge variant="secondary" className="rounded-lg">
-                    {hall.capacity} seats
+                    {hall.capacity} locuri
                   </Badge>
                 </div>
               </CardHeader>
 
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Persisted seats: {hall.seats?.length || 0}
+                  Locuri configurate: {hall.seats?.length || 0}
                 </p>
 
                 <div className="flex items-center gap-2">
@@ -507,14 +506,14 @@ export default function HallsPage() {
                     trigger={
                       <Button size="sm" className="gap-1.5 rounded-full bg-amber-500 text-white shadow-sm hover:bg-amber-500/90">
                         <Pencil className="h-3.5 w-3.5" />
-                        Edit
+                        Modifică
                       </Button>
                     }
                   />
 
                   <Button size="sm" className="gap-1.5 rounded-full bg-red-500 text-white shadow-sm hover:bg-red-500/90" onClick={() => removeHall(hall.id)}>
                     <Trash2 className="h-3.5 w-3.5" />
-                    Delete
+                    Șterge
                   </Button>
                 </div>
               </CardContent>
@@ -524,7 +523,7 @@ export default function HallsPage() {
           {filteredHalls.length === 0 ? (
             <Card className="border-border/60 bg-card/80 sm:col-span-2 xl:col-span-3">
               <CardContent className="p-6 text-sm text-muted-foreground">
-                No halls found.
+                Nicio sală găsită.
               </CardContent>
             </Card>
           ) : null}

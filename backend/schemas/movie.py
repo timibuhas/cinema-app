@@ -7,6 +7,8 @@ class MovieCreate(BaseModel):
     description: str
     duration: int
     image_url: str | None = None
+    banner_image_url: str | None = None
+    trailer_url: str | None = None
     genre: str | None = None
     director: str | None = None
     actors: str | None = None
@@ -19,6 +21,8 @@ class MovieResponse(BaseModel):
     description: str
     duration: int
     image_url: str | None = None
+    banner_image_url: str | None = None
+    trailer_url: str | None = None
     genre: str | None = None
     director: str | None = None
     actors: str | None = None

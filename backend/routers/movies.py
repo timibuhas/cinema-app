@@ -27,6 +27,8 @@ def create_movie(
         description=movie.description,
         duration=movie.duration,
         image_url=movie.image_url,
+        banner_image_url=movie.banner_image_url,
+        trailer_url=movie.trailer_url,
         genre=movie.genre,
         director=movie.director,
         actors=movie.actors,
@@ -120,6 +122,8 @@ def update_movie(
     movie.description = movie_data.description
     movie.duration = movie_data.duration
     movie.image_url = movie_data.image_url
+    movie.banner_image_url = movie_data.banner_image_url
+    movie.trailer_url = movie_data.trailer_url
     movie.genre = movie_data.genre
     movie.director = movie_data.director
     movie.actors = movie_data.actors

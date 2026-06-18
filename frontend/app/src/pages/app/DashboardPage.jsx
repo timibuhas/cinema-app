@@ -90,9 +90,9 @@ function HeroBanner({ movies, screeningsByMovie }) {
 
       {/* Content */}
       <div className="relative flex min-h-[360px] items-end px-5 pb-10 sm:min-h-[480px] sm:px-8 sm:pb-14 md:min-h-[620px] md:px-14">
-        <div className="max-w-xl">
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            {genres.map((g) => (
+        <div className="w-full max-w-[85%] sm:max-w-sm md:max-w-xl">
+          <div className="mb-2 flex flex-wrap items-center gap-1.5 sm:mb-3 sm:gap-2">
+            {genres.slice(0, 2).map((g) => (
               <Badge
                 key={g}
                 variant="secondary"
@@ -107,46 +107,46 @@ function HeroBanner({ movies, screeningsByMovie }) {
               </Badge>
             )}
             {featured.duration && (
-              <span className="flex items-center gap-1 text-xs text-white/60">
+              <span className="hidden items-center gap-1 text-xs text-white/60 sm:flex">
                 <Clock className="h-3 w-3" />
                 {featured.duration} min
               </span>
             )}
           </div>
 
-          <h1 className="mb-3 text-2xl font-extrabold leading-tight text-white drop-shadow-lg sm:text-4xl md:text-5xl">
+          <h1 className="mb-2 text-xl font-extrabold leading-tight text-white drop-shadow-lg sm:mb-3 sm:text-3xl md:text-5xl">
             {featured.title}
           </h1>
 
           {featured.description && (
-            <p className="mb-6 line-clamp-2 text-sm leading-relaxed text-white/70 md:text-base">
+            <p className="mb-4 hidden line-clamp-2 text-sm leading-relaxed text-white/70 sm:block sm:mb-6 md:text-base">
               {featured.description}
             </p>
           )}
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Button
               asChild
-              size="lg"
-              className="gap-2 bg-white text-black shadow-xl hover:bg-white/90"
+              size="sm"
+              className="gap-1.5 bg-white text-black shadow-xl hover:bg-white/90 sm:size-lg sm:gap-2"
             >
               <Link to={`/screenings?movie=${featured.id}`}>
-                <Play className="h-4 w-4 fill-black" />
+                <Play className="h-3.5 w-3.5 fill-black sm:h-4 sm:w-4" />
                 Rezervă bilete
               </Link>
             </Button>
             <Button
               asChild
-              size="lg"
+              size="sm"
               variant="outline"
-              className="border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
+              className="border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 sm:size-lg"
             >
               <Link to="/movies">Toate filmele</Link>
             </Button>
           </div>
 
           {nextScreening && (
-            <p className="mt-4 text-xs text-white/50">
+            <p className="mt-3 hidden text-xs text-white/50 sm:block">
               Următoarea proiecție:{" "}
               <span className="text-white/80">{formatDateTime(nextScreening.start_time)}</span>
               {nextScreening.hall?.name && <> · {nextScreening.hall.name}</>}
@@ -157,7 +157,7 @@ function HeroBanner({ movies, screeningsByMovie }) {
 
       {/* Dot indicators */}
       {movies.length > 1 && (
-        <div className="absolute bottom-5 right-6 flex items-center gap-1.5">
+        <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1.5 sm:bottom-5 sm:left-auto sm:right-6 sm:translate-x-0">
           {movies.map((_, i) => (
             <button
               key={i}
@@ -178,7 +178,7 @@ function HeroBanner({ movies, screeningsByMovie }) {
 function MovieCard({ movie }) {
   return (
     <Link to={`/movies/${movie.id}`} className="block">
-    <div className="group relative w-40 shrink-0 cursor-pointer md:w-44">
+    <div className="group relative w-28 shrink-0 cursor-pointer sm:w-36 md:w-44">
       <div className="overflow-hidden rounded-xl shadow-md ring-0 transition-all duration-300 group-hover:scale-[1.05] group-hover:shadow-2xl group-hover:ring-2 group-hover:ring-primary/50">
         <div className="relative aspect-[2/3] bg-muted">
           {movie.image_url ? (
@@ -224,7 +224,10 @@ function MovieCard({ movie }) {
 // ─── Movie Carousel ───────────────────────────────────────────────────────────
 function MovieCarousel({ movies }) {
   const ref = useRef(null);
-  const scroll = (dir) => ref.current?.scrollBy({ left: dir * 230, behavior: "smooth" });
+  const scroll = (dir) => {
+    const cardW = ref.current?.querySelector("a")?.offsetWidth || 160;
+    ref.current?.scrollBy({ left: dir * (cardW + 8) * 3, behavior: "smooth" });
+  };
 
   if (!movies.length) return (
     <p className="py-8 text-sm text-muted-foreground">Niciun film disponibil.</p>
@@ -234,14 +237,14 @@ function MovieCarousel({ movies }) {
     <div className="relative">
       <button
         onClick={() => scroll(-1)}
-        className="absolute -left-4 top-[40%] z-10 -translate-y-1/2 rounded-full border border-border/70 bg-background/80 p-2 shadow-lg backdrop-blur transition hover:bg-muted md:-left-5"
+        className="absolute -left-3 top-[40%] z-10 hidden -translate-y-1/2 rounded-full border border-border/70 bg-background/80 p-1.5 shadow-lg backdrop-blur transition hover:bg-muted sm:-left-4 sm:block sm:p-2 md:-left-5"
       >
         <ChevronLeft className="h-4 w-4" />
       </button>
 
       <div
         ref={ref}
-        className="flex gap-3 overflow-x-auto scroll-smooth py-2 pl-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex gap-2 overflow-x-auto scroll-smooth py-2 pl-1 pr-2 [scrollbar-width:none] sm:gap-3 sm:pr-4 [&::-webkit-scrollbar]:hidden"
       >
         {movies.map((movie) => (
           <MovieCard key={movie.id} movie={movie} />
@@ -250,7 +253,7 @@ function MovieCarousel({ movies }) {
 
       <button
         onClick={() => scroll(1)}
-        className="absolute -right-4 top-[40%] z-10 -translate-y-1/2 rounded-full border border-border/70 bg-background/80 p-2 shadow-lg backdrop-blur transition hover:bg-muted md:-right-5"
+        className="absolute -right-3 top-[40%] z-10 hidden -translate-y-1/2 rounded-full border border-border/70 bg-background/80 p-1.5 shadow-lg backdrop-blur transition hover:bg-muted sm:-right-4 sm:block sm:p-2 md:-right-5"
       >
         <ChevronRight className="h-4 w-4" />
       </button>
@@ -504,15 +507,15 @@ export default function DashboardPage() {
         description={`Bun venit, ${user?.first_name} ${user?.last_name}.`}
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard icon={Film} label="Movies" value={data.movies.length} hint="Catalog entries" />
-          <StatCard icon={CalendarDays} label="Screenings" value={data.screenings.length} hint="Scheduled slots" />
-          <StatCard icon={Ticket} label="Reservations" value={data.reservations.length} hint="All users" />
-          <StatCard icon={Users} label="Users" value={data.users.length} hint="Registered accounts" />
+          <StatCard icon={Film} label="Filme" value={data.movies.length} hint="Catalog" />
+          <StatCard icon={CalendarDays} label="Proiecții" value={data.screenings.length} hint="Programate" />
+          <StatCard icon={Ticket} label="Rezervări" value={data.reservations.length} hint="Toți utilizatorii" />
+          <StatCard icon={Users} label="Utilizatori" value={data.users.length} hint="Conturi înregistrate" />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
           <Card className="border-border/70 bg-card/90 shadow-md">
-            <CardHeader><CardTitle>Upcoming screenings</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Proiecții viitoare</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {adminScreenings.map((s) => (
                 <div
@@ -520,8 +523,8 @@ export default function DashboardPage() {
                   className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/60 bg-background/70 p-3"
                 >
                   <div>
-                    <p className="font-medium">{s.movie?.title || "Movie"}</p>
-                    <p className="text-xs text-muted-foreground">Hall: {s.hall?.name || "-"}</p>
+                    <p className="font-medium">{s.movie?.title || "Film"}</p>
+                    <p className="text-xs text-muted-foreground">Sală: {s.hall?.name || "-"}</p>
                   </div>
                   <Badge variant="secondary" className="rounded-full">
                     {formatDateTime(s.start_time)}
@@ -532,19 +535,19 @@ export default function DashboardPage() {
           </Card>
 
           <Card className="border-border/70 bg-card/90 shadow-md">
-            <CardHeader><CardTitle>Quick actions</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Acțiuni rapide</CardTitle></CardHeader>
             <CardContent className="space-y-2">
               <Button asChild variant="outline" className="w-full justify-start">
-                <Link to="/movies">Manage movies</Link>
+                <Link to="/movies">Gestionează filme</Link>
               </Button>
               <Button asChild variant="outline" className="w-full justify-start">
-                <Link to="/screenings">Manage screenings</Link>
+                <Link to="/screenings">Gestionează proiecții</Link>
               </Button>
               <Button asChild variant="outline" className="w-full justify-start">
-                <Link to="/halls">Manage halls</Link>
+                <Link to="/halls">Gestionează săli</Link>
               </Button>
               <Button asChild variant="outline" className="w-full justify-start">
-                <Link to="/users">Manage users</Link>
+                <Link to="/users">Gestionează utilizatori</Link>
               </Button>
             </CardContent>
           </Card>
@@ -606,9 +609,6 @@ export default function DashboardPage() {
       {/* CTA banner — guests only */}
       {!user && (
         <section className="overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-accent/8 to-primary/5 px-4 py-8 text-center sm:px-8 sm:py-10">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 sm:h-14 sm:w-14">
-            <Ticket className="h-6 w-6 text-primary sm:h-7 sm:w-7" />
-          </div>
           <h2 className="mb-2 text-xl font-bold sm:text-2xl">Gata să rezervi?</h2>
           <p className="mx-auto mb-6 max-w-sm text-sm text-muted-foreground">
             Creează un cont gratuit și rezervă-ți locul la filmele preferate în câteva secunde.

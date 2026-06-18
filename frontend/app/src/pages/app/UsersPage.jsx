@@ -84,12 +84,12 @@ function UserDialog({ trigger, initialValue, onSave }) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{initialValue ? "Edit user" : "Create user"}</DialogTitle>
+          <DialogTitle>{initialValue ? "Modifică utilizator" : "Crează utilizator"}</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-4 py-2 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="user-first-name">First name</Label>
+            <Label htmlFor="user-first-name">Prenume</Label>
             <Input
               id="user-first-name"
               value={form.first_name}
@@ -98,7 +98,7 @@ function UserDialog({ trigger, initialValue, onSave }) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="user-last-name">Last name</Label>
+            <Label htmlFor="user-last-name">Nume</Label>
             <Input
               id="user-last-name"
               value={form.last_name}
@@ -117,7 +117,7 @@ function UserDialog({ trigger, initialValue, onSave }) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="user-phone">Phone</Label>
+            <Label htmlFor="user-phone">Telefon</Label>
             <Input
               id="user-phone"
               value={form.phone}
@@ -126,7 +126,7 @@ function UserDialog({ trigger, initialValue, onSave }) {
           </div>
 
           <div className="space-y-2">
-            <Label>Role</Label>
+            <Label>Rol</Label>
             <Select value={form.role} onValueChange={(value) => setForm((prev) => ({ ...prev, role: value }))}>
               <SelectTrigger>
                 <SelectValue />
@@ -139,7 +139,7 @@ function UserDialog({ trigger, initialValue, onSave }) {
           </div>
 
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="user-password">Password {initialValue ? "(optional)" : ""}</Label>
+            <Label htmlFor="user-password">Parolă {initialValue ? "(opțional)" : ""}</Label>
             <Input
               id="user-password"
               type="password"
@@ -152,7 +152,7 @@ function UserDialog({ trigger, initialValue, onSave }) {
 
         <DialogFooter>
           <Button onClick={handleSave} disabled={submitting}>
-            {submitting ? "Saving..." : "Save user"}
+            {submitting ? "Se salvează..." : "Salvează"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -201,7 +201,7 @@ export default function UsersPage() {
     try {
       setUsers(await usersApi.list());
     } catch (loadError) {
-      setError(loadError.message || "Could not load users");
+      setError(loadError.message || "Nu s-au putut încărca utilizatorii.");
     } finally {
       setLoading(false);
     }
@@ -229,14 +229,14 @@ export default function UsersPage() {
 
   return (
     <PageFrame
-      title="Users"
-      description="Admin-only account management."
+      title="Utilizatori"
+      description="Gestionarea conturilor (doar admin)."
       actions={
         <>
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search users"
+            placeholder="Caută utilizator"
             className="w-40"
           />
           <Select value={sortBy} onValueChange={setSortBy}>
@@ -244,10 +244,10 @@ export default function UsersPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="name-asc">Name A-Z</SelectItem>
-              <SelectItem value="name-desc">Name Z-A</SelectItem>
+              <SelectItem value="name-asc">Nume A-Z</SelectItem>
+              <SelectItem value="name-desc">Nume Z-A</SelectItem>
               <SelectItem value="email">Email A-Z</SelectItem>
-              <SelectItem value="role">Role</SelectItem>
+              <SelectItem value="role">Rol</SelectItem>
             </SelectContent>
           </Select>
           <UserDialog
@@ -255,7 +255,7 @@ export default function UsersPage() {
             trigger={
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                New user
+                Utilizator nou
               </Button>
             }
           />
@@ -289,7 +289,7 @@ export default function UsersPage() {
                   {filteredUsers.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                        No users found.
+                        Niciun utilizator găsit.
                       </td>
                     </tr>
                   ) : (
@@ -320,7 +320,7 @@ export default function UsersPage() {
                               trigger={
                                 <Button size="sm" className="gap-1.5 rounded-full bg-amber-500 text-white shadow-sm hover:bg-amber-500/90">
                                   <Pencil className="h-3.5 w-3.5" />
-                                  Edit
+                                  <span className="hidden lg:inline">Modifică</span>
                                 </Button>
                               }
                             />
@@ -330,7 +330,7 @@ export default function UsersPage() {
                               onClick={() => removeUser(user.id)}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
-                              Delete
+                              <span className="hidden lg:inline">Șterge</span>
                             </Button>
                           </div>
                         </td>

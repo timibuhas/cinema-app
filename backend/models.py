@@ -24,6 +24,8 @@ class Movie(Base):
     description = Column(String)
     duration = Column(Integer)  # minute
     image_url = Column(String)
+    banner_image_url = Column(String)
+    trailer_url = Column(String)
     genre = Column(String)
     director = Column(String)
     actors = Column(String)
@@ -66,7 +68,7 @@ class Reservation(Base):
     user_id = Column(UUID, ForeignKey("users.id"))
     screening_id = Column(UUID, ForeignKey("screenings.id"))
     seat_id = Column(UUID, ForeignKey("seats.id"))
-    reserved_at = Column(DateTime, default=datetime.utcnow)
+    reserved_at = Column(DateTime, default=datetime.now)
 
     user = relationship("User")
     screening = relationship("Screening")
@@ -80,7 +82,7 @@ class Review(Base):
     movie_id = Column(UUID(as_uuid=True), ForeignKey("movies.id"), nullable=False)
     rating = Column(Integer, nullable=False)
     comment = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
 
     user = relationship("User")
     movie = relationship("Movie")
