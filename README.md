@@ -43,3 +43,6 @@ docker compose up --build -d
 ```
 
 Aplicația va fi disponibilă la [http://localhost](http://localhost).
+
+## Demo video
+https://youtu.be/TNIFVLiUuzE
